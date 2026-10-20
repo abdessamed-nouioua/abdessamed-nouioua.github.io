@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Game design document for Warpbound, a 2D metroidvania built around a throwable teleportation sphere.">
+<title>Warpbound Game Design Document</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Martian+Mono:wght@400;500&display=swap">
+<style>
+
+/* Layout: a level-editor sheet. The page sits on a 32px tile grid (Warpbound's tile size),
+   every edge is square like a tile, screenshots sit in editor-window frames, and each
+   project carries one hue taken from its own game. */
+:root{
+  --paper:#eff1f5; --panel:#ffffff; --ink:#151a2d; --ink-2:#4c5370; --line:#cbd1de;
+  --grid:rgba(21,26,45,.055);
+  --accent:#2747d9; --on-accent:#ffffff;
+  --strip:#151a2d; --strip-fg:#eff1f5;
+  --wb:#b4560f; --cqw:#5a3ed0; --ft:#0a7a5c;
+  --note:#8a5a00; --note-bg:#fff5d9;
+  --display:"Bricolage Grotesque","Arial Narrow",system-ui,sans-serif;
+  --body:"Hanken Grotesk","Segoe UI",system-ui,sans-serif;
+  --mono:"Martian Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --tile:32px;
+  --hue:var(--accent);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0d101b; --panel:#151927; --ink:#e8ebf4; --ink-2:#9ba3bd; --line:#2a3046;
+    --grid:rgba(232,235,244,.04);
+    --accent:#8aa2ff; --on-accent:#0d101b;
+    --strip:#232a40; --strip-fg:#e8ebf4;
+    --wb:#f0a25a; --cqw:#b5a3ff; --ft:#5ad6ae;
+    --note:#f0c060; --note-bg:#2a2412;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0d101b; --panel:#151927; --ink:#e8ebf4; --ink-2:#9ba3bd; --line:#2a3046;
+  --grid:rgba(232,235,244,.04);
+  --accent:#8aa2ff; --on-accent:#0d101b;
+  --strip:#232a40; --strip-fg:#e8ebf4;
+  --wb:#f0a25a; --cqw:#b5a3ff; --ft:#5ad6ae;
+  --note:#f0c060; --note-bg:#2a2412;
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0; background-color:var(--paper); color:var(--ink);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:var(--tile) var(--tile);
+  font:400 17px/1.6 var(--body); -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1120px; margin-inline:auto; padding-inline:20px; padding-block:0 64px}
+a{color:var(--accent); text-underline-offset:.18em}
+a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+h1,h2,h3{font-family:var(--display); text-wrap:balance; margin:0; letter-spacing:-.02em}
+p{margin:0}
+img{display:block; max-width:100%; height:auto}
+[hidden]{display:none!important}
+
+/* ---------- top bar ---------- */
+.top{display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:8px 24px; padding-block:22px; border-bottom:1px solid var(--line)}
+.mark{font:700 1.25rem/1 var(--display); color:var(--ink); text-decoration:none; letter-spacing:-.02em}
+.mark small{font:400 .66rem/1 var(--mono); color:var(--ink-2); letter-spacing:.06em; text-transform:uppercase; margin-left:10px}
+.nav{display:flex; gap:22px}
+.nav a{font:500 .72rem/1 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--ink-2); text-decoration:none; padding-block:6px; border-bottom:2px solid transparent}
+.nav a:hover{color:var(--ink)}
+.nav a[aria-current="page"]{color:var(--ink); border-bottom-color:var(--ink)}
+
+
+:root{--hue:var(--wb)}
+.doc{max-width:760px; padding-block:28px 0; display:grid; gap:0}
+.back{font:500 .7rem/1 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--ink-2); text-decoration:none; justify-self:start; margin-bottom:22px}
+.back:hover{color:var(--ink)}
+.eyebrow{display:flex; align-items:center; gap:10px; font:500 .7rem/1.4 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--hue); margin-bottom:12px}
+.eyebrow::before{content:""; width:10px; height:10px; background:var(--hue)}
+.doc>h1:first-of-type{font-size:clamp(2.2rem,6vw,3.6rem); font-weight:800; line-height:1; letter-spacing:-.035em; border:0; padding:0; margin:0 0 18px}
+.toc{border:1px solid var(--line); background:var(--panel); margin:8px 0 18px}
+.toc summary{cursor:pointer; padding:12px 14px; font:500 .7rem/1 var(--mono); text-transform:uppercase; letter-spacing:.08em}
+.toc ul{margin:0; padding:4px 14px 14px 32px; columns:2 240px; column-gap:28px; font-size:.9rem}
+.toc li{break-inside:avoid; padding-block:2px}
+.toc ul ul{display:none}
+.doc h1{font-size:1.6rem; font-weight:750; line-height:1.15; margin:40px 0 14px; padding-top:16px; border-top:1px solid var(--ink)}
+.doc h2{font-size:1.2rem; font-weight:700; margin:26px 0 10px}
+.doc h3{font:500 .72rem/1.3 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--hue); margin:22px 0 8px}
+.doc p{margin:0 0 12px; max-width:66ch}
+.doc ul,.doc ol{margin:0 0 14px; padding-left:1.25em; max-width:66ch}
+.doc li+li{margin-top:4px}
+.doc hr{display:none}
+.doc strong{font-weight:600}
+.doc blockquote{margin:6px 0 16px; padding:2px 0 2px 16px; border-left:3px solid var(--hue); font:600 1.15rem/1.4 var(--display)}
+.doc blockquote p{margin:0}
+.doc table{border-collapse:collapse; width:100%; font-size:.92rem; background:var(--panel); border:1px solid var(--line); margin:4px 0 16px}
+.doc th{font:500 .62rem/1.3 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--ink-2); text-align:left; padding:10px 14px}
+.doc td{padding:10px 14px; border-top:1px solid var(--line)}
+.doc td.num{font-family:var(--mono); font-size:.8rem; color:var(--hue); white-space:nowrap}
+.tablewrap{overflow-x:auto}
+.foot{margin-top:72px; padding-top:18px; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px 24px; font:400 .66rem/1.5 var(--mono); letter-spacing:.04em; color:var(--ink-2)}
+.foot a{color:inherit}
+</style>
+</head>
+<body>
+<div class="wrap">
+<main class="doc">
+<a class="back" href="../index.html#warpbound">← Warpbound case study</a>
+<p class="eyebrow">Game design document</p>
+<h1 id="warpbound-game-design-document">Warpbound — Game Design Document</h1>
+<p><strong>Version:</strong> Demo build of 10 October 2026<br />
+<strong>Designer:</strong> Mohammed Abdessamed Nouioua (Abdou)<br />
+<strong>Genre:</strong> 2D metroidvania with shoot-'em-up flight sequences<br />
+<strong>Platform:</strong> PC — web browser, mouse and keyboard<br />
+<strong>Status:</strong> Playable demo, in development</p>
+<hr />
+<details class="toc"><summary>Contents · 42 sections</summary>
+<ul>
+<li><a href="#1-document-purpose">1. Document Purpose</a></li>
+<li><a href="#2-game-overview">2. Game Overview</a></li>
+<li><a href="#3-high-concept">3. High Concept</a></li>
+<li><a href="#4-design-pillars">4. Design Pillars</a></li>
+<li><a href="#5-target-audience">5. Target Audience</a></li>
+<li><a href="#6-inspirations">6. Inspirations</a></li>
+<li><a href="#7-the-design-problem">7. The Design Problem</a></li>
+<li><a href="#8-how-freedom-is-controlled">8. How Freedom Is Controlled</a></li>
+<li><a href="#9-story-and-setting">9. Story and Setting</a></li>
+<li><a href="#10-core-loop-high-level">10. Core Loop — High Level</a></li>
+<li><a href="#11-core-loop-moment-to-moment">11. Core Loop — Moment to Moment</a></li>
+<li><a href="#12-player-character">12. Player Character</a></li>
+<li><a href="#13-the-tps-teleportation-sphere">13. The TPS (Teleportation Sphere)</a></li>
+<li><a href="#14-layers">14. Layers</a></li>
+<li><a href="#15-sphere-types">15. Sphere Types</a></li>
+<li><a href="#16-the-sword">16. The Sword</a></li>
+<li><a href="#17-enemies">17. Enemies</a></li>
+<li><a href="#18-bosses">18. Bosses</a></li>
+<li><a href="#19-environment-and-tiles">19. Environment and Tiles</a></li>
+<li><a href="#20-progression-and-rewards">20. Progression and Rewards</a></li>
+<li><a href="#21-challenge-rooms-and-layer-doors">21. Challenge Rooms and Layer Doors</a></li>
+<li><a href="#22-the-crash-site-and-the-jet">22. The Crash Site and the Jet</a></li>
+<li><a href="#23-the-jet-sequence-shoot-em-up">23. The Jet Sequence (Shoot-'em-up)</a></li>
+<li><a href="#24-fast-travel-capsules">24. Fast-Travel Capsules</a></li>
+<li><a href="#25-demo-map">25. Demo Map</a></li>
+<li><a href="#26-level-design-principles">26. Level Design Principles</a></li>
+<li><a href="#27-controls">27. Controls</a></li>
+<li><a href="#28-camera-and-screen">28. Camera and Screen</a></li>
+<li><a href="#29-difficulty-and-failure">29. Difficulty and Failure</a></li>
+<li><a href="#30-tutorial-philosophy">30. Tutorial Philosophy</a></li>
+<li><a href="#31-hud-and-interface">31. HUD and Interface</a></li>
+<li><a href="#32-game-flow-and-menus">32. Game Flow and Menus</a></li>
+<li><a href="#33-visual-direction">33. Visual Direction</a></li>
+<li><a href="#34-audio-direction">34. Audio Direction</a></li>
+<li><a href="#35-tools">35. Tools</a></li>
+<li><a href="#36-full-game-vision">36. Full Game Vision</a></li>
+<li><a href="#37-demo-scope">37. Demo Scope</a></li>
+<li><a href="#38-next-steps">38. Next Steps</a></li>
+<li><a href="#39-what-warpbound-should-never-become">39. What Warpbound Should Never Become</a></li>
+<li><a href="#40-design-philosophy">40. Design Philosophy</a></li>
+<li><a href="#41-portfolio-value">41. Portfolio Value</a></li>
+<li><a href="#42-final-summary">42. Final Summary</a></li>
+</ul>
+</details>
+<h1 id="1-document-purpose">1. Document Purpose</h1>
+<p>This document describes the design of Warpbound as it stands in the playable demo: its systems, rules, numbers, rooms, tools, and the reasoning behind each decision. Section 36 covers the full game the demo is building towards.</p>
+<p>One thing to know before reading: <strong>the demo gives the player their end-game power on purpose.</strong> In the full game these abilities are earned over the whole adventure. The demo hands them out quickly to show what the player becomes by the end.</p>
+<hr />
+<h1 id="2-game-overview">2. Game Overview</h1>
+<div class="tablewrap"><table>
+<tbody>
+<tr>
+<td><strong>Title</strong></td>
+<td>Warpbound</td>
+</tr>
+<tr>
+<td><strong>Genre</strong></td>
+<td>2D side-view metroidvania, with shoot-'em-up flight sections</td>
+</tr>
+<tr>
+<td><strong>Player character</strong></td>
+<td>Namir, a jet pilot</td>
+</tr>
+<tr>
+<td><strong>Core mechanic</strong></td>
+<td>The TPS — a throwable teleportation sphere</td>
+</tr>
+<tr>
+<td><strong>Demo content</strong></td>
+<td>22 rooms, 3 sphere types, 2 elemental swords, 6 enemy types, 2 bosses, 3 fast-travel capsules, a jet to repair, an 8-wave flight</td>
+</tr>
+<tr>
+<td><strong>Session length</strong></td>
+<td>A short demo, replayable</td>
+</tr>
+<tr>
+<td><strong>Fail state</strong></td>
+<td>None. Dying restarts the room with full health</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h1 id="3-high-concept">3. High Concept</h1>
+<p><strong>Teleport anywhere you want.</strong></p>
+<p>You throw a fragile sphere and warp to it. The sphere is your movement, your puzzle tool, and part of your combat. Every new type of sphere and every new layer opens more of the map. Then you repair your crashed jet and fly out in a shoot-'em-up, where your swords decide your beams.</p>
+<hr />
+<h1 id="4-design-pillars">4. Design Pillars</h1>
+<h2 id="freedom">Freedom</h2>
+<p>The player can teleport whenever they want, play around with it, solve puzzles in different ways and approach combat differently. Movement freedom is the feeling the whole game is built on.</p>
+<h2 id="exploration">Exploration</h2>
+<p>The map rewards curiosity. Rooms you can't finish yet are remembered and revisited. Walls hide things, and destroying them reveals the hidden layer behind. Side rooms hold optional rewards.</p>
+<h2 id="challenge">Challenge</h2>
+<p>Freedom is controlled so the design can still speak. The sphere breaks, aims in only eight directions, and is switched off in challenge rooms. Some enemies demand a specific tool, and rewards are locked behind objectives.</p>
+<hr />
+<h1 id="5-target-audience">5. Target Audience</h1>
+<p>Players who enjoy metroidvanias like <em>Metroid</em>, <em>Castlevania</em> and <em>Bloodstained: Ritual of the Night</em>, and movement-focused action games like <em>Velocity 2X</em>.</p>
+<hr />
+<h1 id="6-inspirations">6. Inspirations</h1>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Game</th>
+<th>What Warpbound takes from it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Velocity 2X</strong></td>
+<td>Teleportation as the heart of the game, and mixing platforming levels with shoot-'em-up levels</td>
+</tr>
+<tr>
+<td><strong>Metroid</strong></td>
+<td>Ability-gated exploration of one connected map</td>
+</tr>
+<tr>
+<td><strong>Castlevania</strong></td>
+<td>The metroidvania structure, and backtracking with new powers</td>
+</tr>
+<tr>
+<td><strong>Bloodstained: Ritual of the Night</strong></td>
+<td>Proof that teleportation already works in the genre. Warpbound makes it the core rather than one ability among many</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h1 id="7-the-design-problem">7. The Design Problem</h1>
+<p>Teleportation is not a new idea. <strong>The design problem is freedom.</strong></p>
+<p>If the player can teleport often and at any time, they can skip a level completely. Ordinary platforming challenges stop meaning anything, so the level design has to be much more specific than usual.</p>
+<p>The project fails if it loses the balance between freedom and design. The player must feel free, but that freedom has to be controlled to an extent that still lets the design speak.</p>
+<hr />
+<h1 id="8-how-freedom-is-controlled">8. How Freedom Is Controlled</h1>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Limit</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>One sphere at a time</strong></td>
+<td>No spamming, and it's always clear where you will teleport</td>
+</tr>
+<tr>
+<td><strong>The sphere is fragile</strong></td>
+<td>It breaks on the first wall, so it can't bounce around corners to reach anywhere</td>
+</tr>
+<tr>
+<td class="num"><strong>8-direction aim</strong></td>
+<td>Throws must be lined up; alignment matters</td>
+</tr>
+<tr>
+<td><strong>Challenge rooms</strong></td>
+<td>The sphere doesn't work at all inside them</td>
+</tr>
+<tr>
+<td><strong>Locked rewards</strong></td>
+<td>Most rewards sit behind keys or objectives, such as defeating every enemy</td>
+</tr>
+<tr>
+<td><strong>Fewer platforming rewards</strong></td>
+<td>Platforming alone is easy to teleport past, so it's rarely what guards a reward</td>
+</tr>
+<tr>
+<td><strong>Tool-specific enemies and walls</strong></td>
+<td>Some obstacles only give way to one ability</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>End-game power as the reward.</strong> In the full game the player starts without the TPS and gains everything gradually. Near the end they can skip whatever they want, and that is the reward for playing and finishing the game, which suits a metroidvania. The demo shows that final form.</p>
+<hr />
+<h1 id="9-story-and-setting">9. Story and Setting</h1>
+<p>Namir is a jet pilot, one of the best in his planet's air defence.</p>
+<p>His planet's scientists built a weapon: the <strong>TPS</strong>, a teleportation sphere. A group of terrorists heard about it and attacked. They destroyed the planet but could not find the TPS. The scientific department asked the air defence for help, and Namir and his squad were sent to retrieve the TPS before the terrorists.</p>
+<p>They fought the terrorists in the sky. Namir's whole squad was wiped out, his jet was damaged, and he crashed into the desert where the demo begins.</p>
+<p><strong>The name.</strong> <em>Namir</em> means <em>tiger</em> in Arabic. In many mythologies, the Chinese ones for example, the tiger is a guardian. Namir is the guardian of the sky, which is why the enemy who killed his squad and brought down his jet is a <strong>dragon</strong>.</p>
+<p><strong>The mechanic.</strong> At the crash site, a mechanic is sealed behind fallen rock. The crash brought half the cliff down on him. One of the jet's parts landed next to him.</p>
+<hr />
+<h1 id="10-core-loop-high-level">10. Core Loop — High Level</h1>
+<ol>
+<li><strong>Explore</strong> the map with the sphere and your sword.</li>
+<li><strong>Hit a wall you can't pass</strong>, such as a sandfall, a cracked wall, ice, lava or a layer door.</li>
+<li><strong>Remember it</strong> and keep exploring.</li>
+<li><strong>Find a new ability or upgrade</strong>: a sphere type, a layer, or a sword.</li>
+<li><strong>Return</strong> and open the way. The map changes under you.</li>
+<li><strong>Collect the jet parts</strong>, repair the jet, and <strong>fly</strong> to the next region in a shoot-'em-up.</li>
+</ol>
+<hr />
+<h1 id="11-core-loop-moment-to-moment">11. Core Loop — Moment to Moment</h1>
+<ol>
+<li><strong>Read the room.</strong> Find the gaps, the hazards, the enemies and the walls the sphere will hit.</li>
+<li><strong>Aim.</strong> Hold right-click; the aim snaps to one of 8 directions.</li>
+<li><strong>Throw.</strong> The sphere flies in a straight line.</li>
+<li><strong>Decide while it flies.</strong> Teleport to it, let it break, cancel it, or (for the bomb) blow it up.</li>
+<li><strong>Land and fight.</strong> Use the sword thrust and switch swords or spheres as the room asks.</li>
+</ol>
+<p>In the designer's words: <em>teleport anywhere you want.</em></p>
+<hr />
+<h1 id="12-player-character">12. Player Character</h1>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Run speed</td>
+<td class="num">230 px/s (32 px tiles)</td>
+</tr>
+<tr>
+<td>Jump</td>
+<td>620 px/s launch speed; hold Space to jump higher</td>
+</tr>
+<tr>
+<td>Gravity</td>
+<td class="num">1450 px/s²</td>
+</tr>
+<tr>
+<td>Starting health</td>
+<td class="num">3 hearts</td>
+</tr>
+<tr>
+<td>Maximum health in the demo</td>
+<td class="num">7 hearts (four +1 upgrades)</td>
+</tr>
+<tr>
+<td>Quicksand</td>
+<td>Slows you to 45% speed. You sink, and after 2.6 s it's fatal, so you have time to climb out</td>
+</tr>
+<tr>
+<td>Water</td>
+<td class="num">70% speed, no damage</td>
+</tr>
+<tr>
+<td>Ice</td>
+<td>Slippery, slightly faster</td>
+</tr>
+<tr>
+<td>Lava / very hot lava</td>
+<td>Fatal</td>
+</tr>
+<tr>
+<td>Floor spikes</td>
+<td>Cost a heart and bounce you up</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h1 id="13-the-tps-teleportation-sphere">13. The TPS (Teleportation Sphere)</h1>
+<h2 id="rules">Rules</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Spheres in play</td>
+<td class="num"><strong>1</strong></td>
+</tr>
+<tr>
+<td>Aim</td>
+<td>Hold right-click; snaps to <strong>8 directions</strong></td>
+</tr>
+<tr>
+<td>Throw speed</td>
+<td><strong>580 px/s</strong>, in a straight line (no gravity)</td>
+</tr>
+<tr>
+<td>Lifetime</td>
+<td class="num">3 s</td>
+</tr>
+<tr>
+<td>On hitting a wall</td>
+<td>Breaks, unless it has a layer to spend</td>
+</tr>
+<tr>
+<td>Teleport</td>
+<td>Any time while it's flying; the warp takes 0.26 s</td>
+</tr>
+<tr>
+<td>Recharge</td>
+<td>0.3 s after a teleport, 0.5 s after a break</td>
+</tr>
+<tr>
+<td>Cancel</td>
+<td>Middle click</td>
+</tr>
+<tr>
+<td>Hitting an enemy</td>
+<td>1 damage, and the sphere is destroyed</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="why-these-rules">Why these rules</h2>
+<ul>
+<li><strong>Why it breaks on the first wall.</strong> In the story, the TPS is fragile. In play, this stops the sphere bouncing around corners to reach anywhere, and it gives layers something to upgrade.</li>
+<li><strong>Why one sphere.</strong> With three spheres out, which one would you teleport to? The logical answer, the first one, makes the other two useless. Several spheres on screen would also be confusing, especially in combat.</li>
+<li><strong>Why separate throw and teleport buttons.</strong> The sticky wheel needs you to keep holding the aim button while you steer with WASD, so one shared button wouldn't work.</li>
+<li><strong>Why 8 directions.</strong> Free aim would be overpowered. Eight directions give alignment a purpose and feel good in platforming.</li>
+<li><strong>Why a hit destroys the sphere.</strong> The first concept was an arrow. It dealt damage whether you teleported or not, so players could stay far away and kill everything. In Warpbound an attack costs you the move.</li>
+</ul>
+<h2 id="landing-rule">Landing rule</h2>
+<p>You arrive centred on the sphere if there's room. If there isn't, you need <strong>two empty tiles stacked vertically</strong>: the sphere's own tile plus the one above or below it. You're fitted into that column, as close to the sphere as possible. This keeps teleporting smooth and fair.</p>
+<h2 id="what-it-does-that-a-jump-cant">What it does that a jump can't</h2>
+<p>It reaches places far beyond a jump: across wide gaps, over hazards, and up to ledges.</p>
+<hr />
+<h1 id="14-layers">14. Layers</h1>
+<p>Each layer lets the sphere survive <strong>one more contact</strong>: a bounce off a wall, or a pass through a sandfall. Without a layer, the next contact breaks it.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Sphere</th>
+<th>Base layers</th>
+<th>Upgrades in the demo</th>
+<th>Maximum in the demo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Normal</td>
+<td>1 → <strong>3 with the Matryoshka upgrade</strong></td>
+<td class="num">+1 layer × 3</td>
+<td class="num"><strong>6</strong></td>
+</tr>
+<tr>
+<td>Sticky wheel</td>
+<td class="num">1</td>
+<td class="num">+1 layer × 1 (hidden)</td>
+<td class="num">2</td>
+</tr>
+<tr>
+<td>Bomb</td>
+<td class="num">1</td>
+<td class="num">+1 layer × 3</td>
+<td class="num">4</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Why layers.</strong> They let rooms be built for an exact number of layers. A room with four sandfalls and an upgrade behind them can't be crossed with three layers, so the player remembers it and comes back with four. That's a typical metroidvania room.</p>
+<p><strong>Why rings.</strong> Layers are drawn as rings around the sphere rather than making it bigger. A growing sphere would eventually need collision of its own. The normal sphere's rings are golden, so a fully upgraded sphere turns gold.</p>
+<p><strong>Why separate layers per type.</strong> They're different spheres. It wouldn't make sense for upgrading one to upgrade the others.</p>
+<hr />
+<h1 id="15-sphere-types">15. Sphere Types</h1>
+<p>Switch spheres with <strong>E</strong>.</p>
+<h2 id="normal-sphere-gold">Normal sphere (gold)</h2>
+<p>The default. It bounces using layers, passes through sandfalls by spending layers, and teleports you.</p>
+<h2 id="sticky-wheel-green">Sticky wheel (green)</h2>
+<p>Sticks to the surface it hits. <strong>Hold right-click and steer with WASD</strong> to roll it along surfaces at 160 px/s: up walls, round corners and across ceilings. It breaks on contact with enemies or spikes, because at its core it's still a TPS.</p>
+<p><em>Why:</em> it opens up puzzles where bouncing isn't useful, and spaces where you have to wait for enemies to jump or move before you can go on.</p>
+<h2 id="bomb-sphere-red">Bomb sphere (red)</h2>
+<p>Press the <strong>teleport key to detonate it</strong> instead of teleporting.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Blast radius</td>
+<td class="num">64 px (2 tiles)</td>
+</tr>
+<tr>
+<td>Damage</td>
+<td class="num">3</td>
+</tr>
+<tr>
+<td>Breaks</td>
+<td>Cracked walls, crumbly floor, a guardian's guard</td>
+</tr>
+<tr>
+<td>Goes off by itself</td>
+<td><strong>No.</strong> Detonating when it runs out of layers is switched off</td>
+</tr>
+</tbody>
+</table></div>
+<p><em>Why:</em> the bomb is both an attack and a puzzle solver. It's the arrow problem split in two: the player can have damage and teleporting, but never in a single item. It only goes off when you press the button, like C4.</p>
+<hr />
+<h1 id="16-the-sword">16. The Sword</h1>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Attack</td>
+<td>Straight thrust toward the cursor, snapped to <strong>8 directions</strong></td>
+</tr>
+<tr>
+<td>Thrust duration</td>
+<td class="num">0.2 s</td>
+</tr>
+<tr>
+<td>Cooldown</td>
+<td class="num">0.34 s</td>
+</tr>
+<tr>
+<td>Reach</td>
+<td class="num">52 px</td>
+</tr>
+<tr>
+<td>Damage</td>
+<td class="num">2</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Why a thrust, not a slash.</strong> The first version swung in an arc. The thrust replaced it because players should be precise rather than spam the attack button. Direction adds a dimension to combat, and positioning starts to matter.</p>
+<h2 id="elemental-swords">Elemental swords</h2>
+<p>Switch swords with <strong>Q</strong>.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Sword</th>
+<th>Effect on the world</th>
+<th>Can't affect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Fire sword</strong></td>
+<td>Melts ice into water</td>
+<td>Permafrost</td>
+</tr>
+<tr>
+<td><strong>Ice sword</strong></td>
+<td>Freezes lava into solid rock, and water into ice</td>
+<td>Very hot lava</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Why.</strong> It's common sense: ice and fire should affect the environment. It rewards the player for thinking logically. Permafrost and very hot lava let rooms say "not with this sword".</p>
+<hr />
+<h1 id="17-enemies">17. Enemies</h1>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Enemy</th>
+<th>Behaviour</th>
+<th>How to beat it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Turret</strong></td>
+<td>Fixed; fires shots</td>
+<td>Sword or sphere</td>
+</tr>
+<tr>
+<td><strong>Eater</strong></td>
+<td>Ground enemy; swallows your sphere</td>
+<td>Your sword only stuns it. A turret shot, a falling spike or a bomb kills it</td>
+</tr>
+<tr>
+<td><strong>Absorber</strong></td>
+<td>Its field (84 px) catches the sphere and spirals it in; you can't teleport out</td>
+<td>Avoid its field, or set a bomb off inside it</td>
+</tr>
+<tr>
+<td><strong>Brute</strong></td>
+<td>Walks at you and winds up a punch; only the punch hurts</td>
+<td>Sword hits stagger it and interrupt the punch</td>
+</tr>
+<tr>
+<td><strong>Flyer</strong></td>
+<td>Hovers and drifts</td>
+<td>A sphere hit or a turret shot knocks it out of the air for 3 s</td>
+</tr>
+<tr>
+<td><strong>Guardian</strong></td>
+<td>Its guard blocks everything, and spheres glance off it</td>
+<td>A bomb blast breaks the guard, then attack</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Why some enemies ignore the sword.</strong> To make players use their items in different ways. Forcing the use of a particular ability is a common design tool. The eater turns enemies against each other: bait the turret into shooting it.</p>
+<hr />
+<h1 id="18-bosses">18. Bosses</h1>
+<h2 id="the-hedgehog-r8">The Hedgehog (R8)</h2>
+<p>He fires three spines, then charges to a column of cracked ceiling spikes and parks right under it. The quicksand in his arena slows the charge. The player shoots the spikes down onto him. Three hits.</p>
+<p>He's the exam for <strong>R6</strong>, where the player first learns that cracked spikes can be knocked down.</p>
+<p><strong>Planned change:</strong> a falling spike will <strong>stun</strong> him, and the player then finishes him with the <strong>sword</strong>.</p>
+<h2 id="the-slugger-r21">The Slugger (R21)</h2>
+<p>The sphere bounces, so the fight is <strong>tennis</strong>. He bats your sphere straight back at you, and a returned sphere comes back to your hand.</p>
+<ul>
+<li>A <strong>bomb</strong> knocks his guard down for a few seconds. It never hurts him, and does nothing while he's already dazed.</li>
+<li>Only the <strong>sword</strong> hurts him, and only while his guard is down.</li>
+<li>His room holds a <strong>jet part</strong> behind a gate that opens when he's beaten.</li>
+</ul>
+<hr />
+<h1 id="19-environment-and-tiles">19. Environment and Tiles</h1>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Tile</th>
+<th>Rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Sandfall</strong></td>
+<td>Blocks the player. The sphere passes through by spending a layer</td>
+</tr>
+<tr>
+<td><strong>Quicksand</strong></td>
+<td>Slows and sinks the player</td>
+</tr>
+<tr>
+<td><strong>Cracked ceiling spike</strong></td>
+<td>Knock it down with a sphere; it falls and becomes a floor, a weapon, or a hazard</td>
+</tr>
+<tr>
+<td><strong>Crumbly floor</strong></td>
+<td>Collapses 0.6 s after you stand on it and returns after 3 s. Bombs smash it at once</td>
+</tr>
+<tr>
+<td><strong>Plank</strong></td>
+<td>Can be rotated. You can jump up through it from below</td>
+</tr>
+<tr>
+<td><strong>Mini wall</strong></td>
+<td>Plank-sized and rotatable, but solid from every side</td>
+</tr>
+<tr>
+<td><strong>Cracked wall</strong></td>
+<td>Only a bomb breaks it. <strong>It stays broken for good</strong></td>
+</tr>
+<tr>
+<td><strong>Ice / permafrost</strong></td>
+<td>Ice melts to the fire sword; permafrost doesn't</td>
+</tr>
+<tr>
+<td><strong>Lava / very hot lava</strong></td>
+<td>Lava freezes to the ice sword; very hot lava doesn't</td>
+</tr>
+<tr>
+<td><strong>Water</strong></td>
+<td>Swim; the ice sword freezes it</td>
+</tr>
+<tr>
+<td><strong>Floor spikes</strong></td>
+<td>Hurt the player and break the sticky wheel</td>
+</tr>
+<tr>
+<td><strong>Locked door + key</strong></td>
+<td>Each door has its own key, which can be in another room</td>
+</tr>
+<tr>
+<td><strong>Layer door</strong></td>
+<td>Opens when a sphere with at least the required number of layers hits it</td>
+</tr>
+<tr>
+<td><strong>Gate</strong></td>
+<td>Opens when the room's boss dies</td>
+</tr>
+<tr>
+<td><strong>Hidden layer</strong></td>
+<td>Any tile can hide another one behind it, revealed when the front tile is destroyed</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Why mini walls as well as planks.</strong> Their collision is different: you can jump through a plank, but a mini wall is fully solid.</p>
+<p><strong>Why bombed walls stay broken.</strong> It's just logic. A wall you blew up doesn't rebuild itself.</p>
+<p><strong>Why the hidden layer.</strong> It rewards exploration. Something appearing behind a destroyed wall should feel like surprise mixed with accomplishment.</p>
+<hr />
+<h1 id="20-progression-and-rewards">20. Progression and Rewards</h1>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Reward</th>
+<th>Where in the demo</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TPS</td>
+<td>R2</td>
+<td>The sphere</td>
+</tr>
+<tr>
+<td>Matryoshka</td>
+<td>R9</td>
+<td>Normal sphere goes to 3 layers</td>
+</tr>
+<tr>
+<td>Sphere +1 layer</td>
+<td>R4, R5, R13</td>
+<td class="num">+1 normal layer each</td>
+</tr>
+<tr>
+<td>Bomb sphere</td>
+<td>R15</td>
+<td>Unlocks the bomb</td>
+</tr>
+<tr>
+<td>Bomb +1 layer</td>
+<td>R3, R7, R9</td>
+<td class="num">+1 bomb layer each</td>
+</tr>
+<tr>
+<td>Sticky wheel</td>
+<td>R18</td>
+<td>Unlocks the sticky wheel</td>
+</tr>
+<tr>
+<td>Sticky +1 layer</td>
+<td>R11 (hidden)</td>
+<td class="num">+1 sticky layer</td>
+</tr>
+<tr>
+<td>Fire sword</td>
+<td>R13</td>
+<td>Melts ice</td>
+</tr>
+<tr>
+<td>Ice sword</td>
+<td>R16</td>
+<td>Freezes lava and water</td>
+</tr>
+<tr>
+<td>Max health +1</td>
+<td>R10, R15, R19, R20</td>
+<td class="num">+1 heart each</td>
+</tr>
+<tr>
+<td>Heart</td>
+<td>R16</td>
+<td>Refills one heart</td>
+</tr>
+<tr>
+<td>Keys</td>
+<td>R12 (opens R13), R16</td>
+<td>Open matching doors</td>
+</tr>
+<tr>
+<td>Jet parts</td>
+<td>R1 (the mechanic's favour), R13, R21</td>
+<td class="num">3 needed to repair the jet</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>How rewards are placed.</strong> Each room is designed around one specific objective first. Once the rooms exist, rewards are distributed across the map and balanced.</p>
+<hr />
+<h1 id="21-challenge-rooms-and-layer-doors">21. Challenge Rooms and Layer Doors</h1>
+<p><strong>Challenge rooms</strong> switch the sphere off completely, so the player has only their platforming and sword. They answer the freedom problem directly: inside them, nothing can be skipped.</p>
+<p><strong>Layer doors</strong> gate side rooms by sphere strength. Each door can require a different number of layers. The door in <strong>R2</strong>, right at the start of the game, needs <strong>6</strong>, a fully upgraded normal sphere, and leads to the challenge room <strong>R20</strong>.</p>
+<p>Side rooms always hold a reward, but they're never a mandatory objective.</p>
+<hr />
+<h1 id="22-the-crash-site-and-the-jet">22. The Crash Site and the Jet</h1>
+<p>The game opens at Namir's crashed jet in <strong>R1</strong>. The jet is there because the player will use it: once the three missing parts are found, it flies.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Part</th>
+<th>How you get it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="num">1</td>
+<td><strong>A favour.</strong> The mechanic is sealed behind a diamond of cracked walls next to the wreck. Blow them open with the bomb sphere, and he gives you the part that landed beside him</td>
+</tr>
+<tr>
+<td class="num">2</td>
+<td>Behind a locked door at the end of a lava room (R13). The key is in R12</td>
+</tr>
+<tr>
+<td class="num">3</td>
+<td>Behind the Slugger's gate (R21), reached through a cracked floor in R1</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Why a favour for the first part.</strong> It tries a different approach to the same problem. The three parts come from a favour, a locked door and a boss.</p>
+<p>With all three parts, the player boards the jet with <strong>W</strong> and the flight begins.</p>
+<hr />
+<h1 id="23-the-jet-sequence-shoot-em-up">23. The Jet Sequence (Shoot-'em-up)</h1>
+<h2 id="why-a-shoot-em-up">Why a shoot-'em-up</h2>
+<p>From the start, the game has two kinds of sequences: the metroidvania map and shoot-'em-up sections. In the full game, the jet is how the player travels between biomes (Section 36). The current equipment decides the beams on the jet.</p>
+<h2 id="rules_1">Rules</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Jet health</td>
+<td class="num">3</td>
+</tr>
+<tr>
+<td>Jet speed</td>
+<td class="num">290 px/s</td>
+</tr>
+<tr>
+<td>Beam</td>
+<td>Continuous, 7 damage per second</td>
+</tr>
+<tr>
+<td>Beams</td>
+<td><strong>Normal, Ice, Fire</strong>. They mirror the two elemental swords; in the full game, equipment decides which beams you have</td>
+</tr>
+<tr>
+<td>Getting shot down</td>
+<td>Retry the current wave</td>
+</tr>
+<tr>
+<td>Finishing</td>
+<td>"Flight complete — The sky is clear", then you land back at the crash site</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="enemy-types">Enemy types</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Enemy</th>
+<th>Element</th>
+<th>Hurt only by</th>
+<th>Default shot</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Drone</strong></td>
+<td>Normal</td>
+<td>Normal beam</td>
+<td>Aimed at you</td>
+</tr>
+<tr>
+<td><strong>Frost wing</strong></td>
+<td>Ice</td>
+<td><strong>Fire</strong> beam</td>
+<td>Straight ahead</td>
+</tr>
+<tr>
+<td><strong>Ember wing</strong></td>
+<td>Fire</td>
+<td><strong>Ice</strong> beam</td>
+<td>Three-shot spread</td>
+</tr>
+</tbody>
+</table></div>
+<p>Each has 3 health by default. Every enemy is hurt by only one beam, so the player reads each enemy's element and switches beams constantly. The swords carry their logic into the sky.</p>
+<h2 id="the-demos-flight">The demo's flight</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Wave</th>
+<th>Name</th>
+<th>Enemies</th>
+<th>Twist</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="num">1</td>
+<td>Take-off</td>
+<td class="num">4 Drones</td>
+<td>—</td>
+</tr>
+<tr>
+<td class="num">2</td>
+<td>Cold front</td>
+<td class="num">5 Frost wings, 1 Drone</td>
+<td>—</td>
+</tr>
+<tr>
+<td class="num">3</td>
+<td>Embers</td>
+<td class="num">4 Ember wings</td>
+<td>—</td>
+</tr>
+<tr>
+<td class="num">4</td>
+<td>The escort</td>
+<td class="num">1 Drone, 2 Frost, 2 Ember</td>
+<td>When the gunner falls, the rest enrage</td>
+</tr>
+<tr>
+<td class="num">5</td>
+<td>Pillar run</td>
+<td class="num">3 Drones, 1 Frost, 1 Ember</td>
+<td>Moving terrain</td>
+</tr>
+<tr>
+<td class="num">6</td>
+<td>The vault</td>
+<td class="num">1 Frost, 2 Drones, 2 Ember</td>
+<td>Walls and doors</td>
+</tr>
+<tr>
+<td class="num">7</td>
+<td>Crossfire</td>
+<td class="num">2 Frost, 2 Ember, 1 Drone</td>
+<td>When one is left, they all dive</td>
+</tr>
+<tr>
+<td class="num">8</td>
+<td>Last stand</td>
+<td class="num">1 Drone, 2 Frost, 2 Ember</td>
+<td>Enrage at half, reinforcements at the end</td>
+</tr>
+<tr>
+<td>—</td>
+<td><strong>Well done</strong></td>
+<td>—</td>
+<td>The end card</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h1 id="24-fast-travel-capsules">24. Fast-Travel Capsules</h1>
+<p>Capsules sit in <strong>R1, R4A and R9</strong>. A capsule starts dead. <strong>Throw a sphere into it to power it</strong>, then press <strong>W</strong> at any powered capsule to travel to another.</p>
+<p>In the full game, a fast-travel machine waits in each new biome, so the player never has to replay a flight just to get back.</p>
+<hr />
+<h1 id="25-demo-map">25. Demo Map</h1>
+<p>The demo map has 22 rooms. Normal rooms are 25 × 15 tiles, exactly one screen; small rooms are 12 × 7.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Room</th>
+<th>Name in the build</th>
+<th>What's there</th>
+<th>Gated by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1</td>
+<td>Crash site</td>
+<td>Crashed jet, capsule, the mechanic behind cracked walls, cracked floor down to R21</td>
+<td>—</td>
+</tr>
+<tr>
+<td>R2</td>
+<td>The sphere</td>
+<td>TPS, floor spikes, layer door to R20</td>
+<td>—</td>
+</tr>
+<tr>
+<td>R3</td>
+<td>Two gaps</td>
+<td>Quicksand gaps, bomb +1 layer behind cracked walls</td>
+<td>—</td>
+</tr>
+<tr>
+<td>R4</td>
+<td>Two ways</td>
+<td>Turrets, a brute, crumbly floor, +1 layer; the high road ends at a sandfall</td>
+<td>—</td>
+</tr>
+<tr>
+<td>R4A</td>
+<td>Behind the sandfall</td>
+<td>Very hot lava, capsule</td>
+<td>Sandfall (Matryoshka)</td>
+</tr>
+<tr>
+<td>R5</td>
+<td>The eater</td>
+<td>Turrets, an eater, cracked spikes, +1 layer; upper exit to R11</td>
+<td>—</td>
+</tr>
+<tr>
+<td>R6</td>
+<td>Cracked ceiling</td>
+<td>Cracked spikes over lava</td>
+<td>—</td>
+</tr>
+<tr>
+<td>R7</td>
+<td>Junction</td>
+<td>A brute, a turret, an eater; bomb +1 layer behind cracked walls</td>
+<td>—</td>
+</tr>
+<tr>
+<td>R8</td>
+<td>Hedgehog</td>
+<td><strong>Boss</strong></td>
+<td>—</td>
+</tr>
+<tr>
+<td>R9</td>
+<td>Matryoshka</td>
+<td>Matryoshka, sandfalls, capsule, bomb +1 layer; cracked walls hide two exits</td>
+<td>Boss gate</td>
+</tr>
+<tr>
+<td>R10</td>
+<td>—</td>
+<td>Mini walls, crumbly floor, very hot lava, max health +1</td>
+<td>Cracked wall (bomb)</td>
+</tr>
+<tr>
+<td>R11</td>
+<td>—</td>
+<td>Ice, permafrost, absorbers, floor spikes, hidden sticky +1 layer</td>
+<td>—</td>
+</tr>
+<tr>
+<td>R12</td>
+<td>—</td>
+<td>A brute, a flyer, very hot lava, a key</td>
+<td>via R4A</td>
+</tr>
+<tr>
+<td>R13</td>
+<td>—</td>
+<td>Lava, fire sword, +1 layer, jet part behind a locked door</td>
+<td>Key from R12</td>
+</tr>
+<tr>
+<td>R15</td>
+<td>—</td>
+<td>A maze of cracked walls, bomb sphere, max health +1</td>
+<td>—</td>
+</tr>
+<tr>
+<td>R16</td>
+<td>—</td>
+<td>Permafrost, mini walls, two brutes, a key and door, ice sword, heart</td>
+<td>—</td>
+</tr>
+<tr>
+<td>R18</td>
+<td>— (small)</td>
+<td>Sticky wheel</td>
+<td>via R16</td>
+</tr>
+<tr>
+<td>R19</td>
+<td>— (small)</td>
+<td>A guardian, max health +1</td>
+<td>Cracked wall (bomb)</td>
+</tr>
+<tr>
+<td>R20</td>
+<td>— (challenge)</td>
+<td>No sphere; a flyer, a turret, crumbly floor, spikes, max health +1</td>
+<td>Layer door (6)</td>
+</tr>
+<tr>
+<td>R21</td>
+<td>—</td>
+<td><strong>The Slugger</strong>, jet part</td>
+<td>Cracked floor in R1 (bomb)</td>
+</tr>
+<tr>
+<td>R22</td>
+<td>—</td>
+<td>Very hot lava; no reward yet</td>
+<td>via R15</td>
+</tr>
+<tr>
+<td>R23</td>
+<td>—</td>
+<td>Planks, an absorber; no reward yet</td>
+<td>via R21</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="structure">Structure</h2>
+<ul>
+<li><strong>Main path:</strong> R1 → R2 → R3 → R4 → R5 → R6 → R7 → R8 (Hedgehog) → R9 (Matryoshka).</li>
+<li><strong>Sandfall branch:</strong> back to R4 with the Matryoshka → R4A → R12 → R13 (fire sword, jet part).</li>
+<li><strong>Upper branch from R5:</strong> R11 → R16 (ice sword) → R18 (sticky wheel), and R11 → R15 (bomb sphere) → R22.</li>
+<li><strong>Bomb-gated rooms:</strong> R10 and R19 behind R9's cracked walls; R21 (Slugger) under R1; the mechanic in R1.</li>
+<li><strong>Late side room:</strong> R20, behind R2's 6-layer door.</li>
+</ul>
+<hr />
+<h1 id="26-level-design-principles">26. Level Design Principles</h1>
+<ul>
+<li><strong>One objective per room.</strong> Each room is built around one specific idea; rewards are distributed and balanced afterwards.</li>
+<li><strong>Teach by failure, without killing.</strong> R3 has no text. The first gap clears with a jump and the second doesn't, so the player has to throw and teleport. Falling short drops you into quicksand, which gives you time to climb out, so it's fair for a new player.</li>
+<li><strong>Ability gates.</strong> You need an ability to move forward, as in R4's sandfall, which only a Matryoshka sphere survives.</li>
+<li><strong>Remember and return.</strong> Rooms built for a specific number of layers are meant to be remembered and revisited.</li>
+<li><strong>Combine tools.</strong> The strongest rooms make the player switch quickly between sphere types. <strong>R10</strong>, which combines two types of TPS with quick swapping, is the designer's favourite room.</li>
+<li><strong>Optional side rooms.</strong> Always a reward, never mandatory.</li>
+<li><strong>Reward exploring.</strong> The hidden layer turns destroyed walls into surprises.</li>
+<li><strong>Logic first.</strong> The rules follow common sense: ice freezes, fire melts, blown-up walls stay blown up, and a bomb waits for its button.</li>
+</ul>
+<hr />
+<h1 id="27-controls">27. Controls</h1>
+<h2 id="on-foot">On foot</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Input</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Move</td>
+<td>A / D</td>
+</tr>
+<tr>
+<td>Jump</td>
+<td>Space (hold to jump higher)</td>
+</tr>
+<tr>
+<td>Sword thrust (8 directions)</td>
+<td>Left click</td>
+</tr>
+<tr>
+<td>Aim the sphere (8 directions)</td>
+<td>Hold right click</td>
+</tr>
+<tr>
+<td>Throw</td>
+<td>Right click + left click</td>
+</tr>
+<tr>
+<td>Teleport</td>
+<td>K / Shift</td>
+</tr>
+<tr>
+<td>Detonate the bomb sphere</td>
+<td>Teleport key</td>
+</tr>
+<tr>
+<td>Roll the sticky wheel</td>
+<td>Right click + WASD</td>
+</tr>
+<tr>
+<td>Cancel a thrown sphere</td>
+<td>Middle click</td>
+</tr>
+<tr>
+<td>Switch sword · sphere</td>
+<td>Q · E</td>
+</tr>
+<tr>
+<td>Talk · board the jet · travel</td>
+<td>W</td>
+</tr>
+<tr>
+<td>Map</td>
+<td>M / Tab</td>
+</tr>
+<tr>
+<td>Restart room</td>
+<td>R</td>
+</tr>
+<tr>
+<td>Pause</td>
+<td>Esc / P</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="in-the-jet">In the jet</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Input</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fly</td>
+<td>WASD / arrow keys</td>
+</tr>
+<tr>
+<td>Fire the beam</td>
+<td>Hold J, Space or left click</td>
+</tr>
+<tr>
+<td>Switch beam</td>
+<td>Q, E, right click or mouse wheel</td>
+</tr>
+<tr>
+<td>Pick a beam</td>
+<td class="num">1 normal · 2 ice · 3 fire</td>
+</tr>
+<tr>
+<td>Pause</td>
+<td>Esc / P</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Why mouse aiming.</strong> Aiming and thrusting toward the cursor, both snapped to 8 directions, give precise control while keeping alignment meaningful.</p>
+<hr />
+<h1 id="28-camera-and-screen">28. Camera and Screen</h1>
+<ul>
+<li>An 800 × 480 view with 32 px tiles.</li>
+<li>Each normal room fills exactly one screen, so the sphere is always visible and every throw can be read at a glance.</li>
+<li>Rooms connect through exits on their edges. A map (M / Tab) shows the rooms you've visited.</li>
+</ul>
+<hr />
+<h1 id="29-difficulty-and-failure">29. Difficulty and Failure</h1>
+<ul>
+<li><strong>No game over.</strong> Dying restarts the current room with full health.</li>
+<li><strong>Fatal hazards:</strong> lava, very hot lava, sinking fully into quicksand, and falling out of the room.</li>
+<li><strong>In the jet:</strong> being shot down retries the current wave.</li>
+</ul>
+<p><strong>Why.</strong> The demo should feel fun to replay, and players should want to keep playing with the power-ups. Punishment would work against that.</p>
+<hr />
+<h1 id="30-tutorial-philosophy">30. Tutorial Philosophy</h1>
+<ul>
+<li><strong>One prompt at a time.</strong> The tutorial shows one action and moves on as soon as the player has done it, even if they did it early.</li>
+<li><strong>Two sets:</strong> basics first (move, jump, sword thrust), then the sphere once the player picks it up (aim, throw, teleport, and "it breaks when it hits a wall").</li>
+<li><strong>Rooms teach the rest.</strong> R3 teaches the throw-and-teleport gap by failure, and R6 teaches knocking spikes down before the Hedgehog tests it.</li>
+<li><strong>The jet has its own tips</strong> for flying and beams.</li>
+<li>Tutorial hints can be turned off in Options.</li>
+</ul>
+<hr />
+<h1 id="31-hud-and-interface">31. HUD and Interface</h1>
+<ul>
+<li><strong>Hearts</strong>, top left.</li>
+<li><strong>Gear panel:</strong> the current sword, the current sphere with its layer rings, and jet parts collected.</li>
+<li><strong>Toasts:</strong> short messages for pickups and events, such as "Jet part 2 / 3" or "Guard broken!".</li>
+<li><strong>Dialogue box</strong> at the top of the screen, so it never covers the speaker.</li>
+<li><strong>Map</strong> on M / Tab.</li>
+</ul>
+<hr />
+<h1 id="32-game-flow-and-menus">32. Game Flow and Menus</h1>
+<p><strong>Title:</strong> Continue (when a save exists) · New game · Controls · Options</p>
+<p><strong>Pause (on foot):</strong> Resume · Restart room · Controls · Options · Main menu</p>
+<p><strong>Pause (in the jet):</strong> Resume · Restart this wave · Leave the flight · Controls · Options · Main menu</p>
+<p><strong>Options:</strong> Full screen · Tutorial hints · Screen shake · Sound effects volume</p>
+<p><strong>Saving:</strong> the game autosaves every time you enter a room.</p>
+<p><strong>Flow of the demo:</strong> Crash site → find the TPS → explore and gather abilities → help the mechanic and find the other two jet parts → repair the jet → the flight → "Well done" → land back at the crash site, free to keep exploring.</p>
+<hr />
+<h1 id="33-visual-direction">33. Visual Direction</h1>
+<ul>
+<li>The art is <strong>placeholder</strong>, built for readability while the design settles.</li>
+<li><strong>Colour carries meaning.</strong> The normal sphere is gold, the sticky wheel green and the bomb red. Fire is orange and ice is blue, on the swords, the beams and the jet enemies.</li>
+<li><strong>Layers are shown as rings</strong> around the sphere, so its strength reads at a glance. A fully upgraded normal sphere turns gold.</li>
+<li><strong>Readable hazards:</strong> cracked walls glow in their cracks, and the bomb sphere blinks and sparks.</li>
+</ul>
+<hr />
+<h1 id="34-audio-direction">34. Audio Direction</h1>
+<p>Every sound in the demo is made in code with Web Audio: no audio files and no music. Footsteps change with the surface (sand, stone, wood, gravel, ice), sounds are panned by where they happen in the room, and held sounds loop for as long as they last: the jet engine, quicksand dragging you down, the sticky wheel rolling, and a different beam sound for each element. Options has a volume for sound effects.</p>
+<hr />
+<h1 id="35-tools">35. Tools</h1>
+<p>Warpbound was built with its own <strong>level editor</strong> and <strong>wave editor</strong>, so every idea could be tested quickly.</p>
+<h2 id="level-editor">Level editor</h2>
+<ul>
+<li>Paint rooms tile by tile from a palette of every tile, enemy, pickup and boss.</li>
+<li>Link rooms through their exits, and pair doors with keys, even across rooms.</li>
+<li>Set layer-door requirements, hidden tiles behind tiles, background blocks, plank and mini-wall angles, and challenge-room status.</li>
+<li>Write NPC dialogue and per-room design notes.</li>
+<li>Tune the game's numbers (sphere speed, recharge, jump, bomb radius and more) and lay out the HUD.</li>
+<li>Import custom tiles from images, borrowing an existing tile's behaviour.</li>
+<li><strong>Play any room instantly</strong>, and export a standalone build.</li>
+</ul>
+<h2 id="wave-editor-jet">Wave editor (jet)</h2>
+<p>Choosing <strong>Edit</strong> asks whether to open the jet editor or the metroidvania editor. The wave editor follows the one from the designer's earlier shoot-'em-up.</p>
+<ul>
+<li>Build waves enemy by enemy: type, entry side, movement or path, speed, health, fire rate and shot pattern (aimed, straight, spread, homing, laser or none).</li>
+<li>Add <strong>rules</strong> such as "when the gunner falls, the rest enrage", "when one is left, they all dive" or "reinforcements".</li>
+<li>Add solid terrain, moving terrain and doors.</li>
+<li><strong>Test-fly</strong> any wave instantly.</li>
+</ul>
+<hr />
+<h1 id="36-full-game-vision">36. Full Game Vision</h1>
+<p>The demo is a slice of a larger game.</p>
+<ul>
+<li><strong>Five areas:</strong> a main area, the desert, snow, magma and a destroyed city.</li>
+<li><strong>Six bosses.</strong></li>
+<li><strong>Gradual powers.</strong> The player starts without the TPS and earns its types and layers over the whole game. By the end they can skip whatever they want, and that's the reward for finishing.</li>
+<li><strong>Swords:</strong> a default sword, <em>Fang of Hell</em> (fire) and <em>Glacier Shard</em> (ice).</li>
+<li><strong>Flights between biomes.</strong> Travelling to a new biome, such as the lava or ice biome, is an actual shoot-'em-up level. The player's current equipment decides the jet's beams.</li>
+<li><strong>Fast-travel machines.</strong> Arriving in a new biome, the player finds a fast-travel machine, so the flight doesn't have to be replayed each time.</li>
+<li><strong>Replayable flights.</strong> Cleared flight levels unlock in the main menu, to replay as often as the player wants and chase better scores.</li>
+</ul>
+<hr />
+<h1 id="37-demo-scope">37. Demo Scope</h1>
+<h2 id="in-the-demo">In the demo</h2>
+<ul>
+<li>22 rooms in the desert area.</li>
+<li>All three sphere types, with layer upgrades.</li>
+<li>Both elemental swords.</li>
+<li>6 enemy types and 2 bosses.</li>
+<li>A jet repair quest with 3 parts, one through an NPC favour.</li>
+<li>One 8-wave flight with element-locked beams.</li>
+<li>3 fast-travel capsules.</li>
+<li>Tutorial, menus, options, map and autosave.</li>
+<li>Level and wave editors.</li>
+</ul>
+<h2 id="not-in-the-demo-yet">Not in the demo yet</h2>
+<ul>
+<li>Final art.</li>
+<li>The other areas and bosses.</li>
+<li>Gradual acquisition of abilities (the demo hands them out quickly).</li>
+<li>Flight replays and scores in the main menu.</li>
+</ul>
+<hr />
+<h1 id="38-next-steps">38. Next Steps</h1>
+<ul>
+<li><strong>Hedgehog:</strong> a falling spike stuns him, then the sword finishes him.</li>
+<li><strong>Rooms still in progress:</strong> R22 and R23 have no reward yet, and several rooms still carry placeholder names.</li>
+</ul>
+<hr />
+<h1 id="39-what-warpbound-should-never-become">39. What Warpbound Should Never Become</h1>
+<ul>
+<li><strong>A game where freedom erases the design.</strong> If teleporting lets the player skip every room, the level design has nothing left to say.</li>
+<li><strong>A game where one throw attacks and moves you for free.</strong> That's the arrow problem. An attack always costs the move.</li>
+<li><strong>A screen full of spheres.</strong> One sphere keeps every decision readable.</li>
+<li><strong>A free-aim shooter.</strong> Eight directions keep alignment meaningful.</li>
+</ul>
+<hr />
+<h1 id="40-design-philosophy">40. Design Philosophy</h1>
+<ul>
+<li><strong>Every power gets a limit.</strong> Freedom is the pillar, so each new freedom comes with a rule that keeps the rooms meaningful.</li>
+<li><strong>Split what's too strong.</strong> When one item does too much, divide its jobs between items, as with the sphere and the bomb.</li>
+<li><strong>Follow logic.</strong> Players should be able to predict the world: fire melts, ice freezes, broken walls stay broken.</li>
+<li><strong>Teach without punishing.</strong> Let the player fail, but don't kill them for learning.</li>
+<li><strong>Reward curiosity.</strong> Hidden tiles, side rooms and remembered gates.</li>
+<li><strong>Try more than one approach to the same problem.</strong></li>
+<li><strong>Test ideas quickly.</strong> Build the tools that let an idea be played minutes after it's imagined.</li>
+</ul>
+<hr />
+<h1 id="41-portfolio-value">41. Portfolio Value</h1>
+<p>Warpbound shows:</p>
+<ul>
+<li><strong>Systems design with clear reasoning:</strong> a core mechanic with explicit limits, and a reason behind every rule.</li>
+<li><strong>Level design:</strong> a connected 22-room map with ability gates, layer gates, optional rooms and hidden rewards.</li>
+<li><strong>Boss design</strong> built on the core mechanic, such as tennis with a bouncing sphere.</li>
+<li><strong>Genre blending:</strong> a shoot-'em-up whose rules come from the metroidvania's swords.</li>
+<li><strong>Tool design:</strong> a level editor and a wave editor made to support fast iteration.</li>
+<li><strong>Scope control:</strong> a demo that deliberately shows the end-game form of the player.</li>
+</ul>
+<hr />
+<h1 id="42-final-summary">42. Final Summary</h1>
+<p>Warpbound is a metroidvania where you can <strong>teleport anywhere you want</strong>.</p>
+<p>Its central challenge is freedom: giving players a movement power strong enough to skip a level, then designing the limits that keep every room meaningful. The fragile sphere, its layers, the three sphere types, the elemental swords, the challenge rooms and the flights between biomes all serve that one balance.</p>
+<p><strong>Freedom, exploration, challenge, and design that still speaks.</strong></p>
+<footer class="foot"><a href="../index.html#warpbound">Back to the Warpbound case study</a><span>Warpbound · Game design document</span></footer>
+</main>
+</div>
+</body>
+</html>

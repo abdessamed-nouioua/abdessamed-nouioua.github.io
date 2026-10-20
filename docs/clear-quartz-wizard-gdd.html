@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Game design document for Clear Quartz Wizard, a shoot 'em up where you cannot shoot.">
+<title>Clear Quartz Wizard Game Design Document</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Martian+Mono:wght@400;500&display=swap">
+<style>
+
+/* Layout: a level-editor sheet. The page sits on a 32px tile grid (Warpbound's tile size),
+   every edge is square like a tile, screenshots sit in editor-window frames, and each
+   project carries one hue taken from its own game. */
+:root{
+  --paper:#eff1f5; --panel:#ffffff; --ink:#151a2d; --ink-2:#4c5370; --line:#cbd1de;
+  --grid:rgba(21,26,45,.055);
+  --accent:#2747d9; --on-accent:#ffffff;
+  --strip:#151a2d; --strip-fg:#eff1f5;
+  --wb:#b4560f; --cqw:#5a3ed0; --ft:#0a7a5c;
+  --note:#8a5a00; --note-bg:#fff5d9;
+  --display:"Bricolage Grotesque","Arial Narrow",system-ui,sans-serif;
+  --body:"Hanken Grotesk","Segoe UI",system-ui,sans-serif;
+  --mono:"Martian Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --tile:32px;
+  --hue:var(--accent);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0d101b; --panel:#151927; --ink:#e8ebf4; --ink-2:#9ba3bd; --line:#2a3046;
+    --grid:rgba(232,235,244,.04);
+    --accent:#8aa2ff; --on-accent:#0d101b;
+    --strip:#232a40; --strip-fg:#e8ebf4;
+    --wb:#f0a25a; --cqw:#b5a3ff; --ft:#5ad6ae;
+    --note:#f0c060; --note-bg:#2a2412;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0d101b; --panel:#151927; --ink:#e8ebf4; --ink-2:#9ba3bd; --line:#2a3046;
+  --grid:rgba(232,235,244,.04);
+  --accent:#8aa2ff; --on-accent:#0d101b;
+  --strip:#232a40; --strip-fg:#e8ebf4;
+  --wb:#f0a25a; --cqw:#b5a3ff; --ft:#5ad6ae;
+  --note:#f0c060; --note-bg:#2a2412;
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0; background-color:var(--paper); color:var(--ink);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:var(--tile) var(--tile);
+  font:400 17px/1.6 var(--body); -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1120px; margin-inline:auto; padding-inline:20px; padding-block:0 64px}
+a{color:var(--accent); text-underline-offset:.18em}
+a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+h1,h2,h3{font-family:var(--display); text-wrap:balance; margin:0; letter-spacing:-.02em}
+p{margin:0}
+img{display:block; max-width:100%; height:auto}
+[hidden]{display:none!important}
+
+/* ---------- top bar ---------- */
+.top{display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:8px 24px; padding-block:22px; border-bottom:1px solid var(--line)}
+.mark{font:700 1.25rem/1 var(--display); color:var(--ink); text-decoration:none; letter-spacing:-.02em}
+.mark small{font:400 .66rem/1 var(--mono); color:var(--ink-2); letter-spacing:.06em; text-transform:uppercase; margin-left:10px}
+.nav{display:flex; gap:22px}
+.nav a{font:500 .72rem/1 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--ink-2); text-decoration:none; padding-block:6px; border-bottom:2px solid transparent}
+.nav a:hover{color:var(--ink)}
+.nav a[aria-current="page"]{color:var(--ink); border-bottom-color:var(--ink)}
+
+
+:root{--hue:var(--cqw)}
+.shot{margin:6px 0 18px; border:1px solid var(--strip); background:var(--panel)}
+.shot img{width:100%}
+.shot figcaption{font-size:.84rem; color:var(--ink-2); padding:8px 12px; border-top:1px solid var(--line)}
+.doc{max-width:760px; padding-block:28px 0; display:grid; gap:0}
+.back{font:500 .7rem/1 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--ink-2); text-decoration:none; justify-self:start; margin-bottom:22px}
+.back:hover{color:var(--ink)}
+.eyebrow{display:flex; align-items:center; gap:10px; font:500 .7rem/1.4 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--hue); margin-bottom:12px}
+.eyebrow::before{content:""; width:10px; height:10px; background:var(--hue)}
+.doc>h1:first-of-type{font-size:clamp(2.2rem,6vw,3.6rem); font-weight:800; line-height:1; letter-spacing:-.035em; border:0; padding:0; margin:0 0 18px}
+.toc{border:1px solid var(--line); background:var(--panel); margin:8px 0 18px}
+.toc summary{cursor:pointer; padding:12px 14px; font:500 .7rem/1 var(--mono); text-transform:uppercase; letter-spacing:.08em}
+.toc ul{margin:0; padding:4px 14px 14px 32px; columns:2 240px; column-gap:28px; font-size:.9rem}
+.toc li{break-inside:avoid; padding-block:2px}
+.toc ul ul{display:none}
+.doc h1{font-size:1.6rem; font-weight:750; line-height:1.15; margin:40px 0 14px; padding-top:16px; border-top:1px solid var(--ink)}
+.doc h2{font-size:1.2rem; font-weight:700; margin:26px 0 10px}
+.doc h3{font:500 .72rem/1.3 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--hue); margin:22px 0 8px}
+.doc p{margin:0 0 12px; max-width:66ch}
+.doc ul,.doc ol{margin:0 0 14px; padding-left:1.25em; max-width:66ch}
+.doc li+li{margin-top:4px}
+.doc hr{display:none}
+.doc strong{font-weight:600}
+.doc blockquote{margin:6px 0 16px; padding:2px 0 2px 16px; border-left:3px solid var(--hue); font:600 1.15rem/1.4 var(--display)}
+.doc blockquote p{margin:0}
+.doc table{border-collapse:collapse; width:100%; font-size:.92rem; background:var(--panel); border:1px solid var(--line); margin:4px 0 16px}
+.doc th{font:500 .62rem/1.3 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--ink-2); text-align:left; padding:10px 14px}
+.doc td{padding:10px 14px; border-top:1px solid var(--line)}
+.doc td.num{font-family:var(--mono); font-size:.8rem; color:var(--hue); white-space:nowrap}
+.tablewrap{overflow-x:auto}
+.foot{margin-top:72px; padding-top:18px; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px 24px; font:400 .66rem/1.5 var(--mono); letter-spacing:.04em; color:var(--ink-2)}
+.foot a{color:inherit}
+</style>
+</head>
+<body>
+<div class="wrap">
+<main class="doc">
+<a class="back" href="../index.html#clear-quartz-wizard">← Clear Quartz Wizard case study</a>
+<p class="eyebrow">Game design document</p>
+<h1 id="clear-quartz-wizard-game-design-document">Clear Quartz Wizard — Game Design Document</h1>
+<p><strong>Project:</strong> Clear Quartz Wizard (working title)<br />
+<strong>Genre:</strong> Shoot 'em up — a shmup where you cannot shoot<br />
+<strong>Platform:</strong> Web browser (PC prototype)<br />
+<strong>Engine:</strong> HTML5 / JavaScript (Canvas)<br />
+<strong>Status:</strong> Playable prototype — proof of concept<br />
+<strong>Primary Goal:</strong> Hypnotize and control</p>
+<hr />
+<details class="toc"><summary>Contents · 44 sections</summary>
+<ul>
+<li><a href="#1-document-purpose">1. Document Purpose</a></li>
+<li><a href="#2-game-overview">2. Game Overview</a></li>
+<li><a href="#3-design-pillars">3. Design Pillars</a></li>
+<li><a href="#4-target-audience">4. Target Audience</a></li>
+<li><a href="#5-design-problem">5. Design Problem</a></li>
+<li><a href="#6-inspirations-and-positioning">6. Inspirations and Positioning</a></li>
+<li><a href="#7-core-gameplay-loop">7. Core Gameplay Loop</a></li>
+<li><a href="#8-core-rules-and-objective">8. Core Rules and Objective</a></li>
+<li><a href="#9-play-space">9. Play Space</a></li>
+<li><a href="#10-the-wizard">10. The Wizard</a></li>
+<li><a href="#11-the-hypnosis-scan">11. The Hypnosis Scan</a></li>
+<li><a href="#12-allies">12. Allies</a></li>
+<li><a href="#13-enemy-types">13. Enemy Types</a></li>
+<li><a href="#14-bullets-and-telegraphing">14. Bullets and Telegraphing</a></li>
+<li><a href="#15-enemy-behaviour">15. Enemy Behaviour</a></li>
+<li><a href="#16-enemy-fusion">16. Enemy Fusion</a></li>
+<li><a href="#17-fusion-meter-and-ally-merge">17. Fusion Meter and Ally Merge</a></li>
+<li><a href="#18-ultimate">18. Ultimate</a></li>
+<li><a href="#19-sprinters">19. Sprinters</a></li>
+<li><a href="#20-clear-quartz-crack-the-sleep-phase">20. Clear Quartz Crack — the Sleep Phase</a></li>
+<li><a href="#21-betrayal">21. Betrayal</a></li>
+<li><a href="#22-recovery">22. Recovery</a></li>
+<li><a href="#23-emergent-strategy-recruiting-the-same-allies-again">23. Emergent Strategy — Recruiting the Same Allies Again</a></li>
+<li><a href="#24-environment-objects">24. Environment Objects</a></li>
+<li><a href="#25-missions-prototype">25. Missions (Prototype)</a></li>
+<li><a href="#26-structure-and-progression">26. Structure and Progression</a></li>
+<li><a href="#27-scoring">27. Scoring</a></li>
+<li><a href="#28-leaderboard">28. Leaderboard</a></li>
+<li><a href="#29-controls">29. Controls</a></li>
+<li><a href="#30-ui-and-feedback">30. UI and Feedback</a></li>
+<li><a href="#31-game-flow">31. Game Flow</a></li>
+<li><a href="#32-tutorial-philosophy">32. Tutorial Philosophy</a></li>
+<li><a href="#33-visual-direction">33. Visual Direction</a></li>
+<li><a href="#34-hidden-narrative">34. Hidden Narrative</a></li>
+<li><a href="#35-ending-and-reality-mode">35. Ending and Reality Mode</a></li>
+<li><a href="#36-audio-direction">36. Audio Direction</a></li>
+<li><a href="#37-technical-direction">37. Technical Direction</a></li>
+<li><a href="#38-monetization">38. Monetization</a></li>
+<li><a href="#39-prototype-scope">39. Prototype Scope</a></li>
+<li><a href="#40-full-game-scope-planned">40. Full Game Scope (planned)</a></li>
+<li><a href="#41-what-clear-quartz-wizard-should-never-become">41. What Clear Quartz Wizard Should Never Become</a></li>
+<li><a href="#42-design-philosophy">42. Design Philosophy</a></li>
+<li><a href="#43-portfolio-value">43. Portfolio Value</a></li>
+<li><a href="#44-final-design-summary">44. Final Design Summary</a></li>
+</ul>
+</details>
+<h1 id="1-document-purpose">1. Document Purpose</h1>
+<p>This document defines the design, gameplay systems, presentation, structure and intended player experience of Clear Quartz Wizard.</p>
+<p>Clear Quartz Wizard is a horizontal shoot 'em up in which the player cannot shoot. The player flies a wizard whose crystal can hypnotize enemies. Hypnotized enemies become allies, and allies shoot on the player's command.</p>
+<p>The document describes the current playable prototype (built in one week) and marks the decisions that are still open as <strong>TBD</strong>.</p>
+<blockquote>
+<p>"Clear Quartz Wizard" is the prototype's working title. It comes from the two things in it: a clear quartz and a wizard. The final name is TBD.</p>
+</blockquote>
+<figure class="shot"><img src="../img/cqw/01-title.jpg" width="1200" height="675" loading="lazy" alt="Main menu"><figcaption>Main menu</figcaption></figure>
+<hr />
+<h1 id="2-game-overview">2. Game Overview</h1>
+<p>The player controls a wizard flying on a broom with a quartz crystal on its tip.</p>
+<p>Enemies arrive in waves from the right side of the screen. They move in patterns, telegraph their attacks and shoot at the wizard.</p>
+<p>The wizard has no weapon of his own. Instead, he can <strong>scan</strong> an enemy in front of him with the crystal. A successful scan hypnotizes the enemy, and it joins the wizard as an <strong>ally</strong>. The wizard can hold two allies, and each ally fires only when the player commands it.</p>
+<p>The player's job in every mission is to clear the screen by capturing enemies, using captured enemies to weaken or destroy the others, and surviving.</p>
+<p>When the wizard loses every heart, the crystal cracks. The wizard falls asleep for a few seconds, his allies turn against him, and he must survive with flappy-bird physics until the crystal repairs itself.</p>
+<p>The game is an arcade experience. Its depth comes from choosing which enemies to take, when to take them and how to spend their limited shots.</p>
+<hr />
+<h1 id="3-design-pillars">3. Design Pillars</h1>
+<h2 id="31-risk-and-reward">3.1 Risk and Reward</h2>
+<p>Every reward must be risked for. Strong enemies can be captured, but the scan only reaches a short distance in front of the wizard and slows him down. To get a powerful ally, the player has to fly close to a dangerous enemy and hold position.</p>
+<h2 id="32-control">3.2 Control</h2>
+<p>The fantasy is taking what you want. When the player sees a strong or unique enemy, the game should make them want it, and then let them have it.</p>
+<h2 id="33-readability">3.3 Readability</h2>
+<p>The game is not a difficulty race. Enemies announce every shot before they fire, bullet types are colour-coded, and the player should always be able to read what is about to happen.</p>
+<h2 id="34-coherence">3.4 Coherence</h2>
+<p>The core mechanics are explained by the same idea: the wizard is under hypnosis, and everything he sees is an illusion. This gives the game a firm foundation and, at the same time, freedom over what can appear in it.</p>
+<hr />
+<h1 id="4-target-audience">4. Target Audience</h1>
+<p>Clear Quartz Wizard is intended for everyone.</p>
+<p>It should be accessible to all types of players, including players who have never enjoyed shoot 'em ups or who have been pushed away by the difficulty of modern bullet-hell games.</p>
+<p>It keeps the movement and the arcade feel of a classic shmup, but the decisions at its core (which enemy to take, when, and how to use it) bring it closer to Pokémon or Pikmin, with shmup logic and movement.</p>
+<hr />
+<h1 id="5-design-problem">5. Design Problem</h1>
+<p>The central design question was:</p>
+<blockquote>
+<p>Can a shoot 'em up work if the player cannot shoot?</p>
+</blockquote>
+<h2 id="51-why-ask-this-question">5.1 Why ask this question?</h2>
+<p>The shoot 'em up is one of the defining genres of video game history: Space Invaders, Gradius and R-Type all shaped what games became.</p>
+<p>Today, the genre is far less prominent than it used to be.</p>
+<p>The reason, in this design's view, is that the genre followed one path to its end. Companies competed on a single layer: <strong>difficulty</strong>. On arcade machines this made sense: a harder game meant more deaths, and more deaths meant more coins. This race produced the bullet-hell sub-genre, and with it the genre became something for a specific, hardcore audience.</p>
+<p>There are exceptions that tried something different, such as the Cotton series and Ikaruga, but the majority followed the same path.</p>
+<p>Clear Quartz Wizard tries a different path. Its first line was:</p>
+<blockquote>
+<p><strong>"A shmup where you cannot shoot."</strong></p>
+</blockquote>
+<h2 id="52-what-cannot-shoot-means">5.2 What "cannot shoot" means</h2>
+<p>"You cannot shoot" is the game's headline, and it is literally true: the wizard has no attack.</p>
+<p>Allies can shoot, and the player commands them. But the wizard himself is not doing anything. In the game's lore, the quartz is what controls everything.</p>
+<h2 id="53-why-hypnosis">5.3 Why hypnosis?</h2>
+<p>Hypnosis fits the lore of the game, and controlling enemies becomes more interesting the more types of enemies there are. Every type of enemy becomes a different type of tool.</p>
+<hr />
+<h1 id="6-inspirations-and-positioning">6. Inspirations and Positioning</h1>
+<p>No single game inspired Clear Quartz Wizard. The idea came out of necessity: from asking why the genre declined and what else it could be.</p>
+<p>The genre context that shaped it:</p>
+<ul>
+<li><strong>Space Invaders, Gradius, R-Type</strong> — the classics that defined the shmup</li>
+<li><strong>Bullet-hell games</strong> — where the difficulty race led</li>
+<li><strong>Cotton series, Ikaruga</strong> — exceptions that tried something different</li>
+</ul>
+<p>In its decision-making, Clear Quartz Wizard is closer to <strong>Pokémon</strong> or <strong>Pikmin</strong> than to a traditional shmup: the player is catching creatures and deciding how to use them, live, while moving with shmup logic and controls.</p>
+<hr />
+<h1 id="7-core-gameplay-loop">7. Core Gameplay Loop</h1>
+<h3 id="high-level-loop">High-level loop</h3>
+<ol>
+<li>A mission starts and enemies fly in.</li>
+<li>Read the enemies: their type, movement and attacks.</li>
+<li>Choose an enemy you want.</li>
+<li>Fly close and scan it while dodging.</li>
+<li>Capture it as an ally.</li>
+<li>Use your allies' limited shots to weaken or destroy other enemies.</li>
+<li>Capture weakened enemies more easily.</li>
+<li>Fill the fusion meter by scanning, then merge your two allies.</li>
+<li>Use the merged ally — or spend it on the ultimate beam.</li>
+<li>Clear the mission and move to the next one.</li>
+<li>If the crystal cracks, survive the sleep phase and recover.</li>
+</ol>
+<h3 id="low-level-loop">Low-level loop</h3>
+<p>At every moment, the player is deciding:</p>
+<ul>
+<li>Which enemy do I want as an ally?</li>
+<li>Is it worth flying this close to take it?</li>
+<li>Should I weaken it first so the scan is faster?</li>
+<li>Should I shoot this enemy or save it for capture?</li>
+<li>Which ally should fire, and is this shot worth the ammo?</li>
+<li>Should I merge my allies now?</li>
+<li>Should I keep firing the merged ally, or save its ammo for a bigger ultimate?</li>
+<li>Is a weakened enemy about to fuse, and can I stop it?</li>
+</ul>
+<hr />
+<h1 id="8-core-rules-and-objective">8. Core Rules and Objective</h1>
+<ul>
+<li>The wizard cannot attack.</li>
+<li>Holding the scan on an enemy hypnotizes it. When the hypnosis is complete, the enemy becomes an ally.</li>
+<li>The wizard can hold <strong>two allies</strong>.</li>
+<li>Allies fire only on the player's command and have <strong>limited ammo</strong>.</li>
+<li>A mission ends when all of its enemies are gone, captured or destroyed.</li>
+<li>The wizard has <strong>5 hearts</strong>. Losing all of them cracks the crystal and starts the sleep phase.</li>
+<li>Being hit during the sleep phase ends the run.</li>
+</ul>
+<hr />
+<h1 id="9-play-space">9. Play Space</h1>
+<ul>
+<li>A single 16:9 screen (1200 × 675 in the prototype)</li>
+<li>Enemies enter from the right edge, or from the top, the bottom or behind the wizard</li>
+<li>The wizard can move anywhere on the screen</li>
+<li>Missions can add objects to the screen: blocks, moving pillars, doors and keys (see section 24)</li>
+</ul>
+<hr />
+<h1 id="10-the-wizard">10. The Wizard</h1>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Movement</td>
+<td class="num">8 directions</td>
+</tr>
+<tr>
+<td>Speed</td>
+<td class="num">360 px/s</td>
+</tr>
+<tr>
+<td>Speed while scanning</td>
+<td class="num">78%</td>
+</tr>
+<tr>
+<td>Hearts</td>
+<td class="num">5</td>
+</tr>
+<tr>
+<td>Invincibility after a hit</td>
+<td class="num">1.1 s</td>
+</tr>
+</tbody>
+</table></div>
+<p>There is no HUD panel. The wizard's hearts float above his head and follow him. While the crystal is cracked, the hearts are empty and a countdown appears above them.</p>
+<p>The wizard is animated: he bobs while flying, leans into his movement, his hat flops behind him, his scarf and robe flutter, the broom's bristles shake and he blinks. When he scans, he raises his arm and the crystal flares.</p>
+<hr />
+<h1 id="11-the-hypnosis-scan">11. The Hypnosis Scan</h1>
+<p>The scan is the game's core mechanic.</p>
+<figure class="shot"><img src="../img/cqw/03-scan.jpg" width="1200" height="675" loading="lazy" alt="Scanning a drone"><figcaption>Scanning a drone</figcaption></figure>
+<h2 id="111-how-it-works">11.1 How it works</h2>
+<ul>
+<li>Hold <strong>Space</strong> (or the mouse button) to scan.</li>
+<li>The scan reaches <strong>245 px</strong> in front of the wizard and catches enemies within about <strong>46 px</strong> (plus the enemy's size) of his height.</li>
+<li>It locks onto the nearest enemy in that area. It cannot see through blocks.</li>
+<li>A cyan ring fills around the target. When the ring closes, the enemy is captured.</li>
+<li>If the scan stops, the enemy's hypnosis slowly fades.</li>
+</ul>
+<h2 id="112-why-the-capture-takes-time">11.2 Why the capture takes time</h2>
+<p>If the scan were instant, there would be no challenge: no push and pull, no risk, only reward.</p>
+<blockquote>
+<p>If the reward is not risked for, there is no dopamine.</p>
+</blockquote>
+<p>The short reach and the slowdown follow the same idea. To take a strong enemy, the player has to get close to it and stay there.</p>
+<h2 id="113-weakened-enemies-are-easier-to-capture">11.3 Weakened enemies are easier to capture</h2>
+<p>The lower an enemy's health, the less hypnosis it needs. The effect scales with missing health: an enemy with almost no health left needs up to <strong>65% less</strong> hypnosis than at full health.</p>
+<p>This connects the two halves of the game: the player uses allies to weaken an enemy, then takes it. It is also natural: someone who is weakened has less resistance.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Enemy</th>
+<th style="text-align: right;">Time to capture at full HP</th>
+<th style="text-align: right;">At 1 HP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Drone / Drone II</td>
+<td class="num" style="text-align: right;">≈ 1.3 s</td>
+<td class="num" style="text-align: right;">≈ 0.9 s</td>
+</tr>
+<tr>
+<td>Spread</td>
+<td class="num" style="text-align: right;">≈ 1.5 s</td>
+<td class="num" style="text-align: right;">≈ 1.0 s</td>
+</tr>
+<tr>
+<td>Laser</td>
+<td class="num" style="text-align: right;">≈ 1.7 s</td>
+<td class="num" style="text-align: right;">≈ 1.0 s</td>
+</tr>
+<tr>
+<td>Shield</td>
+<td class="num" style="text-align: right;">≈ 2.1 s</td>
+<td class="num" style="text-align: right;">≈ 1.1 s</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="114-scanned-enemies-panic">11.4 Scanned enemies panic</h2>
+<p>An enemy being scanned freezes in place and shakes, but it keeps shooting: faster (×2.6), with shorter warnings and less accurate aim.</p>
+<p>This is its nervous system reacting while its brain is not working properly: a survival instinct. As a result, a capture stays dangerous until the ring closes.</p>
+<hr />
+<h1 id="12-allies">12. Allies</h1>
+<figure class="shot"><img src="../img/cqw/04-allies-combat.jpg" width="1200" height="675" loading="lazy" alt="Two allies firing"><figcaption>Two allies firing</figcaption></figure>
+<h2 id="121-two-ally-slots">12.1 Two ally slots</h2>
+<p>The wizard holds two allies. Capturing a third replaces the oldest.</p>
+<p>One ally was tested and felt too limited.</p>
+<p>Three allies made the game too easy: the combined reach of three allies hit every enemy on screen and removed all threat. Each ally also has its own fire button, and a third fire button on top of movement, scanning and dodging felt unnecessary.</p>
+<p>Two allies felt balanced, both in shooting range and in the feeling of commanding two shooters.</p>
+<h2 id="122-allies-fire-on-command">12.2 Allies fire on command</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>J</td>
+<td>Ally 1 fires</td>
+</tr>
+<tr>
+<td>K</td>
+<td>Ally 2 fires</td>
+</tr>
+<tr>
+<td>L</td>
+<td>Both fire</td>
+</tr>
+<tr>
+<td>Shift (hold)</td>
+<td>Line both allies up at the wizard's height</td>
+</tr>
+</tbody>
+</table></div>
+<p>Allies do not fire automatically. The game cannot know which enemy the player wants to capture next, and automatic fire could destroy the enemy the player was planning to take.</p>
+<p>Lining allies up (Shift) makes every shot aimed instead of wasted, which matters because ammo is limited.</p>
+<h2 id="123-limited-ammo">12.3 Limited ammo</h2>
+<p>Every ally has a limited number of shots, shown as a ring around it and a number below it. When the ammo runs out, the ally is gone.</p>
+<p>Limited ammo forces variety during play. Without it, a Laser and a Shield ally together would be unstoppable. The rule is:</p>
+<blockquote>
+<p>The stronger the ally, the less ammo it has.</p>
+</blockquote>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Ally</th>
+<th>Shot</th>
+<th style="text-align: right;">Ammo</th>
+<th style="text-align: right;">Cooldown</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Drone / Drone II</td>
+<td>single straight shot</td>
+<td class="num" style="text-align: right;">8</td>
+<td class="num" style="text-align: right;">0.22 s</td>
+</tr>
+<tr>
+<td>Spread</td>
+<td>three-way shot</td>
+<td class="num" style="text-align: right;">6</td>
+<td class="num" style="text-align: right;">0.48 s</td>
+</tr>
+<tr>
+<td>Laser</td>
+<td>piercing beam across the screen (stops at blocks), 3 damage</td>
+<td class="num" style="text-align: right;">4</td>
+<td class="num" style="text-align: right;">0.72 s</td>
+</tr>
+<tr>
+<td>Shield</td>
+<td>1.2 s protective bubble around the wizard</td>
+<td class="num" style="text-align: right;">3</td>
+<td class="num" style="text-align: right;">1.2 s</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="124-never-vulnerable">12.4 Never vulnerable</h2>
+<p>As long as the wizard can scan an enemy and dodge, nothing in the game should make the player feel vulnerable, even with no allies.</p>
+<hr />
+<h1 id="13-enemy-types">13. Enemy Types</h1>
+<p>Each type has its own silhouette and colour, and keeps its shape as an ally (with a hypnotized swirl in its eye and ally colours).</p>
+<figure class="shot"><img src="../img/cqw/15-enemy-roster.jpg" width="1200" height="675" loading="lazy" alt="Enemy roster"><figcaption>Enemy roster</figcaption></figure>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Enemy</th>
+<th>Look</th>
+<th style="text-align: right;">HP</th>
+<th>Default bullet</th>
+<th style="text-align: right;">One shot about every</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Drone</strong></td>
+<td>round, one big eye, antenna, flapping fins</td>
+<td class="num" style="text-align: right;">2</td>
+<td>Chaser</td>
+<td class="num" style="text-align: right;">2.6 s</td>
+<td>the basic scout</td>
+</tr>
+<tr>
+<td><strong>Drone II</strong></td>
+<td>silver angular hull, twin barrels, red stripe</td>
+<td class="num" style="text-align: right;">2</td>
+<td>Straight</td>
+<td class="num" style="text-align: right;">2.5 s</td>
+<td>drone variant that does not home</td>
+</tr>
+<tr>
+<td><strong>Spread</strong></td>
+<td>wide manta with three gun prongs</td>
+<td class="num" style="text-align: right;">2</td>
+<td>Straight ×3 (fan)</td>
+<td class="num" style="text-align: right;">2.9 s</td>
+<td>fires three bullets at once</td>
+</tr>
+<tr>
+<td><strong>Laser</strong></td>
+<td>long needle with a glowing lens</td>
+<td class="num" style="text-align: right;">3</td>
+<td>Laser</td>
+<td class="num" style="text-align: right;">3.6 s</td>
+<td>aims, then fires a beam</td>
+</tr>
+<tr>
+<td><strong>Shield</strong></td>
+<td>armoured hexagon with a visor</td>
+<td class="num" style="text-align: right;">4 + 3 shield</td>
+<td>Charge (plasma)</td>
+<td class="num" style="text-align: right;">4.3 s</td>
+<td>its shield absorbs ally bullets first</td>
+</tr>
+</tbody>
+</table></div>
+<p>Shot timings include the charge-up warning and a small random delay, and assume a calm enemy: being scanned, enraged or one of the last enemies left makes them fire faster.</p>
+<p>The bullet type is set per enemy, not per type (a Drone can fire straight shots, for example). The type decides how many bullets it fires: the Spread always fires a fan of three.</p>
+<p>Touching an enemy costs the wizard a heart and the enemy 1 HP.</p>
+<hr />
+<h1 id="14-bullets-and-telegraphing">14. Bullets and Telegraphing</h1>
+<h2 id="141-bullet-types">14.1 Bullet types</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Bullet</th>
+<th>Colour</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Chaser</strong></td>
+<td>green</td>
+<td>homes in on the wizard for about 2.6 s, then flies straight</td>
+</tr>
+<tr>
+<td><strong>Straight</strong></td>
+<td>red</td>
+<td>flies straight ahead</td>
+</tr>
+<tr>
+<td><strong>Charge (plasma)</strong></td>
+<td>blue</td>
+<td>long charge-up, then a large, slower plasma ball</td>
+</tr>
+<tr>
+<td><strong>Laser</strong></td>
+<td>pink</td>
+<td>an aim line shows where it will fire, then a beam</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="142-every-shot-is-announced">14.2 Every shot is announced</h2>
+<p>Before every shot, the enemy turns red and shakes. Then it fires.</p>
+<ul>
+<li>Normal shots: about <strong>0.4 s</strong> of warning</li>
+<li>Plasma: about <strong>1.2 s</strong> — the enemy shakes harder and a blue ball grows on its nose</li>
+<li>Laser: about <strong>0.75 s</strong>, with a dashed aim line from its nose</li>
+</ul>
+<p>This is a deliberate answer to bullet hell. The challenge comes from reading the enemies and making decisions, not from memorising walls of bullets.</p>
+<hr />
+<h1 id="15-enemy-behaviour">15. Enemy Behaviour</h1>
+<p>In a traditional shmup, the most important things are tight controls, small hitboxes and bullet patterns that players learn.</p>
+<p>In Clear Quartz Wizard, the most important thing is <strong>enemy behaviour</strong>. The player is catching enemies and making decisions live, so missions are designed around how enemies behave rather than as waves of targets. Each decision should challenge how the player deals with the next enemy.</p>
+<h2 id="151-movement-behaviours">15.1 Movement behaviours</h2>
+<p>Each enemy flies in (from the right, top, bottom or behind) and then follows one of these behaviours:</p>
+<ul>
+<li><strong>Hold its position</strong>, floating gently</li>
+<li><strong>Follow a path</strong>: up and down, zigzag, wave, circle, figure 8 or swoop</li>
+<li><strong>Track the wizard's height</strong>: slides up and down to line up with him (the Laser's default)</li>
+<li><strong>Chase the wizard</strong>: drifts towards him</li>
+<li><strong>Protect another enemy</strong>: stays between that enemy and the wizard, so it takes the shots and the scan first</li>
+<li><strong>Dive at the wizard</strong>: swoops at him, leaves the screen and comes back</li>
+</ul>
+<h2 id="152-behaviour-changes-as-the-wave-thins-out">15.2 Behaviour changes as the wave thins out</h2>
+<p>An enemy can switch to a second behaviour when the number of enemies left drops to a set value.</p>
+<p>Example from mission 2: four drones zigzag in front of a Spread. When only three enemies are left, the drones stop zigzagging and start protecting the Spread.</p>
+<h2 id="153-wave-reactions">15.3 Wave reactions</h2>
+<p>A whole wave can react to events:</p>
+<ul>
+<li>when a number or percentage of enemies is left</li>
+<li>when one type of enemy is gone</li>
+<li>after a number of seconds</li>
+</ul>
+<p>Possible reactions: dive, chase, enrage (fire and move faster), fire faster, move faster, resist hypnosis, start zigzagging, freeze, retreat, or call reinforcements.</p>
+<p>Example from mission 6: when the Shield falls, the rest become enraged; when one enemy is left, three drones arrive as reinforcements.</p>
+<h2 id="154-crowd-balance">15.4 Crowd balance</h2>
+<p>In some waves, the fewer enemies are left, the faster each one fires.</p>
+<hr />
+<h1 id="16-enemy-fusion">16. Enemy Fusion</h1>
+<p>When an enemy is weakened to <strong>half its health or less</strong>, it flies to the nearest other enemy (at any health) and the two fuse into a single, bigger enemy.</p>
+<figure class="shot"><img src="../img/cqw/05-enemy-fusing.jpg" width="1200" height="675" loading="lazy" alt="A weakened drone flying to merge"><figcaption>A weakened drone flying to merge</figcaption></figure>
+<h2 id="161-rules">16.1 Rules</h2>
+<ul>
+<li>Only the enemy that seeks the fusion has to be weakened.</li>
+<li>One fusion happens at a time.</li>
+<li>While it flies to its partner, the weakened enemy does not shoot. The player can stop the fusion by scanning or destroying it on the way.</li>
+<li>The fused enemy is larger and tougher, and takes turns using <strong>both</strong> of its parents' attacks.</li>
+<li>If either parent is a Shield, the fusion has a shield.</li>
+<li>Every pair of types has its own fused form.</li>
+</ul>
+<figure class="shot"><img src="../img/cqw/06-fused-enemy.jpg" width="1200" height="675" loading="lazy" alt="A fused enemy"><figcaption>A fused enemy</figcaption></figure>
+<h2 id="162-why-enemies-fuse">16.2 Why enemies fuse</h2>
+<p>The birds are too scared, so they huddle together, like in cartoons.</p>
+<h2 id="163-scanning-breaks-a-fusion">16.3 Scanning breaks a fusion</h2>
+<p>Scanning a fused enemy does not capture it: it breaks the fusion apart into its two original enemies, each with the health it had. The halves cannot fuse again, so the player can then capture or destroy them.</p>
+<p>When a fused enemy is scanned, it becomes confused about what is happening and what it was scared of. The hypnosis affects the brain.</p>
+<h2 id="164-fusion-forms">16.4 Fusion forms</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Pair</th>
+<th>Form</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Drone + Drone</td>
+<td>Twin Eye</td>
+</tr>
+<tr>
+<td>Drone + Laser</td>
+<td>Lancer</td>
+</tr>
+<tr>
+<td>Drone + Shield</td>
+<td>Sentinel</td>
+</tr>
+<tr>
+<td>Drone + Spread</td>
+<td>Hydra</td>
+</tr>
+<tr>
+<td>Laser + Laser</td>
+<td>Crossblade</td>
+</tr>
+<tr>
+<td>Laser + Shield</td>
+<td>Cannon</td>
+</tr>
+<tr>
+<td>Laser + Spread</td>
+<td>Trident</td>
+</tr>
+<tr>
+<td>Shield + Shield</td>
+<td>Fortress</td>
+</tr>
+<tr>
+<td>Shield + Spread</td>
+<td>Crab</td>
+</tr>
+<tr>
+<td>Spread + Spread</td>
+<td>Kraken</td>
+</tr>
+</tbody>
+</table></div>
+<p>Drone II fuses like a Drone but keeps its own look inside the fusion. The order of the pair does not matter: Drone + Spread is the same as Spread + Drone.</p>
+<figure class="shot"><img src="../img/cqw/16-fusion-forms.jpg" width="1200" height="675" loading="lazy" alt="All ten fusion forms"><figcaption>All ten fusion forms</figcaption></figure>
+<hr />
+<h1 id="17-fusion-meter-and-ally-merge">17. Fusion Meter and Ally Merge</h1>
+<p>Enemy fusion and ally merging are different things. Enemies fuse because they are scared and facing a threat. Allies merge to become stronger: their commands become synchronised.</p>
+<h2 id="171-the-fusion-meter">17.1 The fusion meter</h2>
+<p>Scanning an enemy slowly fills a ring around the wizard. About 6 seconds of scanning fills it.</p>
+<figure class="shot"><img src="../img/cqw/07-meter-full.jpg" width="1200" height="675" loading="lazy" alt="The fusion meter is full"><figcaption>The fusion meter is full</figcaption></figure>
+<h2 id="172-merging">17.2 Merging</h2>
+<p>When the meter is full and the wizard has two allies, pressing <strong>Tab</strong> starts the merge:</p>
+<ul>
+<li>The merge takes about <strong>2.2 s</strong>.</li>
+<li>The wizard slows to <strong>35%</strong> speed while the meter drains and the two allies spiral together.</li>
+<li>The result is a single merged ally with its own look for every pair.</li>
+</ul>
+<figure class="shot"><img src="../img/cqw/08-merging.jpg" width="1200" height="675" loading="lazy" alt="Merging two allies"><figcaption>Merging two allies</figcaption></figure>
+<h2 id="173-the-merged-ally">17.3 The merged ally</h2>
+<ul>
+<li>Each weapon's remaining ammo is <strong>doubled</strong>. Two fresh allies, a Drone (8) and a Spread (6), become 16 Drone shots and 12 Spread shots.</li>
+<li><strong>Q</strong> switches between the two weapons. J, K and L all fire the current weapon.</li>
+<li>When one weapon runs out, it switches to the other. The merged ally lasts until both are empty.</li>
+<li>The merged ally takes <strong>both</strong> ally slots, so the scan cannot capture anything while it exists.</li>
+</ul>
+<figure class="shot"><img src="../img/cqw/09-merged-ally.jpg" width="1200" height="675" loading="lazy" alt="The merged ally"><figcaption>The merged ally</figcaption></figure>
+<h2 id="174-why-the-merged-ally-takes-both-slots">17.4 Why the merged ally takes both slots</h2>
+<p>Merging doubles the bullet count. If the player could capture a third enemy while holding a merged ally, it would not make sense to stop them merging that one too. Merging is also the only way to use the ultimate.</p>
+<h2 id="175-why-merging-matters">17.5 Why merging matters</h2>
+<p>Merging is the designer's favourite mechanic. Players will wonder what two specific allies will look like together, and that curiosity is fun to discover.</p>
+<hr />
+<h1 id="18-ultimate">18. Ultimate</h1>
+<p>With a merged ally, pressing <strong>O</strong> fires one huge laser beam. The merged ally is used up, and the player has to capture new enemies.</p>
+<figure class="shot"><img src="../img/cqw/10-ultimate.jpg" width="1200" height="675" loading="lazy" alt="The ultimate beam"><figcaption>The ultimate beam</figcaption></figure>
+<h2 id="181-power-depends-on-unused-ammo">18.1 Power depends on unused ammo</h2>
+<p>The ultimate's strength depends on how much of the merged ally's ammo is left:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Ammo left</th>
+<th style="text-align: right;">Damage</th>
+<th style="text-align: right;">Beam height</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Full (never fired)</td>
+<td class="num" style="text-align: right;">30</td>
+<td class="num" style="text-align: right;">320 px</td>
+</tr>
+<tr>
+<td>Half</td>
+<td class="num" style="text-align: right;">≈ 17</td>
+<td class="num" style="text-align: right;">≈ 170 px</td>
+</tr>
+<tr>
+<td>One shot</td>
+<td class="num" style="text-align: right;">3</td>
+<td class="num" style="text-align: right;">20 px</td>
+</tr>
+</tbody>
+</table></div>
+<p>With one shot left, the ultimate is exactly the same as a normal Laser shot.</p>
+<p>The beam stops at blocks, and a Shield's shield absorbs part of the damage first.</p>
+<h2 id="182-spend-or-save">18.2 Spend or save</h2>
+<p>The ultimate creates a constant decision: use the merged ally's shots now, or save them for a bigger beam later.</p>
+<hr />
+<h1 id="19-sprinters">19. Sprinters</h1>
+<p>A sprinter is a fast yellow arrow that crosses the screen. A warning sign appears on the right edge one second before it arrives.</p>
+<ul>
+<li>Hitting it with an ally shot gives <strong>+1 bullet</strong> to every Drone and Spread shot (up to +3).</li>
+<li>Touching it costs a heart.</li>
+<li>A mission sets how many sprinters it sends (0–3). They come once all of the mission's enemies have appeared.</li>
+</ul>
+<p>Sprinters are a small addition that rewards fast reflexes with something fair. The player cannot know when one is coming, so they cannot prepare for it. Without allies, it cannot be taken. With allies, the player has to aim well, which is why the line-up button (Shift) exists.</p>
+<hr />
+<h1 id="20-clear-quartz-crack-the-sleep-phase">20. Clear Quartz Crack — the Sleep Phase</h1>
+<p>When the wizard loses his last heart, the crystal cracks and he falls asleep.</p>
+<figure class="shot"><img src="../img/cqw/11-sleep-phase.jpg" width="1200" height="675" loading="lazy" alt="The sleep phase"><figcaption>The sleep phase</figcaption></figure>
+<h2 id="201-rules">20.1 Rules</h2>
+<ul>
+<li>The sleep phase lasts <strong>6 seconds</strong> (adjustable in Options from 3 to 30 s).</li>
+<li>The wizard falls with gravity. <strong>Space</strong> (or W) makes him flap upward.</li>
+<li>The first 1.2 s protect the wizard from hits.</li>
+<li>During the sleep phase, any hit, any wall, any pillar and the top or bottom of the screen end the run.</li>
+<li>When the timer ends, the crystal repairs itself and the wizard wakes up with 1 s of invincibility.</li>
+</ul>
+<h2 id="202-why-a-sleep-phase-instead-of-losing-a-life">20.2 Why a sleep phase instead of losing a life</h2>
+<p>The player should not lose immediately when their health runs out. Old arcade shmups gave players a second chance with a <strong>continue</strong> system.</p>
+<p>The sleep phase is that second chance, tied to the lore. When the quartz cracks, the hypnosis is released for a short time and the wizard falls asleep. Normal controls would not feel natural while sleeping, so the sleep phase uses flappy-bird physics.</p>
+<h2 id="203-why-6-seconds">20.3 Why 6 seconds</h2>
+<p>The player usually loses their last heart when the screen is full of enemies. Ten seconds in front of them was too long: survival was nearly impossible whatever the player did.</p>
+<p>Six seconds is the balance point: the player feels the consequence of losing, but has a realistic chance of surviving.</p>
+<hr />
+<h1 id="21-betrayal">21. Betrayal</h1>
+<p>When the crystal cracks, the wizard's allies turn against him.</p>
+<ul>
+<li>Each ally becomes an enemy again and flies back to the spot where it was captured, then resumes its old behaviour.</li>
+<li>While returning, traitors do not shoot and do not hurt by touch. A dashed pink ring marks them.</li>
+<li>A merged ally splits back into its two enemies.</li>
+</ul>
+<p>Originally, traitors attacked immediately from beside the wizard. That was too harsh during the sleep phase.</p>
+<hr />
+<h1 id="22-recovery">22. Recovery</h1>
+<p>After waking up, the wizard's hearts regenerate one at a time: the first after 0.8 s, then one every 2.2 s until all five are back. Regeneration stops if the wizard is hit.</p>
+<p>The wizard wakes up with empty hearts. Being hit before the first heart returns cracks the crystal again.</p>
+<hr />
+<h1 id="23-emergent-strategy-recruiting-the-same-allies-again">23. Emergent Strategy — Recruiting the Same Allies Again</h1>
+<p>Playtesting revealed a strategy that was not designed as a separate mechanic.</p>
+<p>A player who loves a specific pair of allies can keep it:</p>
+<ol>
+<li>Use the pair until both allies are down to their last shot.</li>
+<li>Let the wizard be hit on purpose and fall asleep.</li>
+<li>The allies betray him and fly back to their posts.</li>
+<li>Survive the sleep phase.</li>
+<li>Scan them again and recruit them with full ammo.</li>
+</ol>
+<p>It is very challenging, but it works, and it comes entirely from the interaction between limited ammo, the sleep phase and betrayal.</p>
+<hr />
+<h1 id="24-environment-objects">24. Environment Objects</h1>
+<p>The prototype is also used to experiment with objects on the screen.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Object</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Backdrop</strong></td>
+<td>coloured background tiles, no collision</td>
+</tr>
+<tr>
+<td><strong>Block</strong></td>
+<td>stops the wizard, every bullet, lasers and the scan. Enemies fly over it. Hitting one while asleep ends the run</td>
+</tr>
+<tr>
+<td><strong>Pillar</strong></td>
+<td>blocks that scroll left across the screen with a gap to fly through, like a Flappy Bird pipe. Touching one costs a heart; while asleep it ends the run. Pillars block bullets, lasers and the scan</td>
+</tr>
+<tr>
+<td><strong>Door + key</strong></td>
+<td>a door acts as a block until the wizard flies into its key. Each door and its key share a colour</td>
+</tr>
+</tbody>
+</table></div>
+<p>Pillars were added to test what happens when the player has space to hide behind during play. Doors and keys are an experiment with new objects.</p>
+<p>Backdrop tiles, doors and keys exist in the prototype but are not used in the current seven missions.</p>
+<figure class="shot"><img src="../img/cqw/12-escape-pillars.jpg" width="1200" height="675" loading="lazy" alt="Pillars in mission 7"><figcaption>Pillars in mission 7</figcaption></figure>
+<hr />
+<h1 id="25-missions-prototype">25. Missions (Prototype)</h1>
+<p>The prototype's missions are test subjects for the game's mechanics, not a campaign.</p>
+<p>Each mission shows its title in large letters when it starts.</p>
+<figure class="shot"><img src="../img/cqw/02-mission-card-tutorial-tip.jpg" width="1200" height="675" loading="lazy" alt="Mission title card and the first tutorial step"><figcaption>Mission title card and the first tutorial step</figcaption></figure>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th style="text-align: right;">#</th>
+<th>Mission</th>
+<th>Enemies</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="num" style="text-align: right;">1</td>
+<td>Tutorial</td>
+<td class="num">2 Drones</td>
+<td>One circles, one weaves. When one is left, it starts chasing the wizard</td>
+</tr>
+<tr>
+<td class="num" style="text-align: right;">2</td>
+<td>Clear All Enemies</td>
+<td class="num">4 Drones, 1 Spread</td>
+<td>The drones zigzag. When three enemies are left, they start protecting the Spread. 1 sprinter</td>
+</tr>
+<tr>
+<td class="num" style="text-align: right;">3</td>
+<td>Clear All Enemies II</td>
+<td class="num">3 Drones, 1 Spread (3 HP)</td>
+<td>Two drones fly figure 8s and one circles. When two are left, the figure-8 drones protect the Spread</td>
+</tr>
+<tr>
+<td class="num" style="text-align: right;">4</td>
+<td>Scan All Enemies Without Shooting Them</td>
+<td class="num">1 fast Drone</td>
+<td>A drone moving at three times normal speed. It is too fast to hit, so the player should scan it instead of wasting shots. 1 sprinter</td>
+</tr>
+<tr>
+<td class="num" style="text-align: right;">5</td>
+<td>Zigzag Patrol</td>
+<td class="num">4 Drones, 1 Shield</td>
+<td>The drones zigzag. When one enemy is left, it dives at the wizard</td>
+</tr>
+<tr>
+<td class="num" style="text-align: right;">6</td>
+<td>Last Stand</td>
+<td>Shield, 2 Spreads, Laser, Drone II</td>
+<td>Behind a slatted wall of blocks. When the Shield falls, the rest are enraged. When one is left, three drones arrive as reinforcements. Crowd balance on. 1 sprinter</td>
+</tr>
+<tr>
+<td class="num" style="text-align: right;">7</td>
+<td>Escape</td>
+<td class="num">1 Drone</td>
+<td>Five pillars scroll past at high speed and repeat. A single drone tracking the wizard's height arrives after 4 s. The goal is to get through the pillars and scan it</td>
+</tr>
+</tbody>
+</table></div>
+<p>Some missions finish in seconds, others take minutes.</p>
+<p><strong>Open questions</strong></p>
+<ul>
+<li>Mission titles currently describe objectives, but every mission ends when its enemies are gone. Whether objectives become real win and fail conditions is <strong>TBD</strong>.</li>
+<li>Mission 7's execution needs more work.</li>
+</ul>
+<hr />
+<h1 id="26-structure-and-progression">26. Structure and Progression</h1>
+<h2 id="261-prototype">26.1 Prototype</h2>
+<ul>
+<li>Missions play in order. Each starts a few seconds after the previous one is cleared.</li>
+<li>After the last mission, the game loops back to the first, and enemies fire <strong>15% faster</strong> on every loop.</li>
+<li>Difficulty follows <strong>one curve</strong>; there are no difficulty settings.</li>
+</ul>
+<h2 id="262-full-game-planned">26.2 Full game (planned)</h2>
+<ul>
+<li>A full <strong>campaign</strong></li>
+<li><strong>Bosses</strong></li>
+<li><strong>Leaderboards</strong></li>
+<li>A <strong>Reality</strong> mode, unlocked by finishing the game (see section 35)</li>
+</ul>
+<hr />
+<h1 id="27-scoring">27. Scoring</h1>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Action</th>
+<th style="text-align: right;">Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Capture an enemy</td>
+<td class="num" style="text-align: right;">+250</td>
+</tr>
+<tr>
+<td>Destroy an enemy</td>
+<td class="num" style="text-align: right;">+100</td>
+</tr>
+<tr>
+<td>Destroy a fused enemy</td>
+<td class="num" style="text-align: right;">+400</td>
+</tr>
+<tr>
+<td>Clear a mission</td>
+<td class="num" style="text-align: right;">+150</td>
+</tr>
+<tr>
+<td>Destroy a sprinter</td>
+<td class="num" style="text-align: right;">+250</td>
+</tr>
+<tr>
+<td>Take a key</td>
+<td class="num" style="text-align: right;">+50</td>
+</tr>
+<tr>
+<td>Ally bullet hit</td>
+<td class="num" style="text-align: right;">+35</td>
+</tr>
+<tr>
+<td>Ally laser or ultimate hit</td>
+<td class="num" style="text-align: right;">+45</td>
+</tr>
+<tr>
+<td>Hit on a Shield's shield</td>
+<td class="num" style="text-align: right;">+20</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h1 id="28-leaderboard">28. Leaderboard</h1>
+<p>Leaderboards are planned for the full game. They turn the score into a competitive goal.</p>
+<hr />
+<h1 id="29-controls">29. Controls</h1>
+<p>The prototype is played with the keyboard. Gamepad support is planned.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>W A S D / arrows</td>
+<td>Fly</td>
+</tr>
+<tr>
+<td>Space / mouse (hold)</td>
+<td>Scan</td>
+</tr>
+<tr>
+<td>J · K · L</td>
+<td>Fire ally 1 · ally 2 · both</td>
+</tr>
+<tr>
+<td>Shift (hold)</td>
+<td>Line allies up</td>
+</tr>
+<tr>
+<td>Tab</td>
+<td>Merge allies (meter full)</td>
+</tr>
+<tr>
+<td>Q</td>
+<td>Switch the merged ally's weapon</td>
+</tr>
+<tr>
+<td>O</td>
+<td>Ultimate (uses up the merged ally)</td>
+</tr>
+<tr>
+<td>Space / W (asleep)</td>
+<td>Flap</td>
+</tr>
+<tr>
+<td>Esc / P</td>
+<td>Pause</td>
+</tr>
+<tr>
+<td>R</td>
+<td>Restart after game over</td>
+</tr>
+<tr>
+<td>Enter</td>
+<td>Skip a tutorial tip</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h1 id="30-ui-and-feedback">30. UI and Feedback</h1>
+<ul>
+<li><strong>Hearts</strong> above the wizard's head; empty, with a countdown, while the crystal is cracked; the next heart pulses green while regenerating</li>
+<li><strong>Mission title card</strong> when a mission starts</li>
+<li><strong>Message banner</strong> at the top for events ("Captured Spread ally", "The guard is down — they're furious!")</li>
+<li><strong>Ammo rings and counters</strong> around each ally; the merged ally also shows its ultimate power as a percentage</li>
+<li><strong>Enemy health bars</strong> with one segment per hit point; the bar flashes when an enemy is weak enough to fuse</li>
+<li><strong>Hypnosis ring</strong> around the enemy being scanned</li>
+<li><strong>Fusion meter</strong> ring around the wizard, with a TAB prompt when merging is possible</li>
+<li><strong>Charge-up warnings</strong>: red shake, plasma ball, laser aim line</li>
+<li><strong>Game over screen</strong>: waves cleared, enemies converted, score, what ended the run and in which mission</li>
+</ul>
+<figure class="shot"><img src="../img/cqw/13-game-over.jpg" width="1200" height="675" loading="lazy" alt="Game over"><figcaption>Game over</figcaption></figure>
+<hr />
+<h1 id="31-game-flow">31. Game Flow</h1>
+<h3 id="main-menu">Main menu</h3>
+<ul>
+<li>Start game</li>
+<li>Tutorial</li>
+<li>Choose mission</li>
+<li>How to play (two pages: controls, and an illustrated "How it works")</li>
+<li>Options</li>
+</ul>
+<h3 id="options">Options</h3>
+<ul>
+<li>Cracked crystal duration (3–30 s)</li>
+<li>Tutorial tips on/off</li>
+<li>Weakened enemies fuse on/off</li>
+<li>Show all tutorial tips again</li>
+</ul>
+<h3 id="pause-menu">Pause menu</h3>
+<ul>
+<li>Resume</li>
+<li>Restart mission</li>
+<li>How to play</li>
+<li>Options</li>
+<li>Main menu</li>
+</ul>
+<h3 id="game-over">Game over</h3>
+<p>R restarts the run; Esc returns to the main menu.</p>
+<figure class="shot"><img src="../img/cqw/14-how-it-works.jpg" width="1200" height="675" loading="lazy" alt="How to play — How it works"><figcaption>How to play — How it works</figcaption></figure>
+<hr />
+<h1 id="32-tutorial-philosophy">32. Tutorial Philosophy</h1>
+<p>The tutorial teaches through play, one step at a time. Each step completes when the player does it:</p>
+<ol>
+<li>Fly around.</li>
+<li>Hypnotise with your crystal.</li>
+<li>Capture an ally.</li>
+<li>Command your allies.</li>
+<li>Line them up.</li>
+</ol>
+<p>After that, each advanced system is introduced with a one-time tip the first time it appears: weakened enemies, the red charge-up, bullet colours, the full fusion meter, the merged ally, "no free slot", enemy fusion, the cracked crystal, blocks, pillars, keys and sprinters.</p>
+<hr />
+<h1 id="33-visual-direction">33. Visual Direction</h1>
+<p>The prototype uses clean vector shapes on a dark starfield:</p>
+<ul>
+<li>Every enemy type has a distinct silhouette and colour.</li>
+<li>Allies keep their silhouette but switch to ally colours and a hypnotised swirl eye.</li>
+<li>Fused forms combine both parents in a pose unique to the pair, inside a two-colour energy ring.</li>
+<li>The wizard is the most animated element on screen.</li>
+</ul>
+<p>Final art direction: <strong>TBD</strong>.</p>
+<hr />
+<h1 id="34-hidden-narrative">34. Hidden Narrative</h1>
+<p>The game has a hidden story, revealed gradually, like the medical theme in FiveTen.</p>
+<h2 id="341-the-lore">34.1 The lore</h2>
+<p>The wizard was searching for a quartz that grants all wishes. He had read about it in his magic books.</p>
+<p>He found it in a cave, stuck to a stick. He was happy that he had finally found it, but when he came closer, the quartz activated, scanned him and hypnotised him.</p>
+<p>That stick is the broom he rides, and the quartz sits on its tip.</p>
+<p>The wizard has been under hypnosis ever since. <strong>The quartz is the real player.</strong> Every enemy is an illusion: in reality, they are birds throwing rocks at him, because they are scared of what this thing is.</p>
+<h2 id="342-how-the-mechanics-fit-the-lore">34.2 How the mechanics fit the lore</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>In the game</th>
+<th>In reality</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Enemies</td>
+<td>scared birds</td>
+</tr>
+<tr>
+<td>Bullets</td>
+<td>rocks the birds throw</td>
+</tr>
+<tr>
+<td>Scanning an enemy</td>
+<td>the quartz hypnotises the bird too</td>
+</tr>
+<tr>
+<td>The crystal cracks and the wizard sleeps</td>
+<td>the hypnosis is released for a moment</td>
+</tr>
+<tr>
+<td>Enemies fusing</td>
+<td>scared birds huddling together</td>
+</tr>
+<tr>
+<td>A scanned fusion breaking apart</td>
+<td>confused birds forgetting what scared them</td>
+</tr>
+<tr>
+<td>Allies merging</td>
+<td>hypnotised birds whose commands are synchronised</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="343-why-hide-it">34.3 Why hide it</h2>
+<p>The player should eventually ask: <strong>"Why hypnosis?"</strong> From that question, theories start forming.</p>
+<p>Betrayal is not explained during play. If it is explained, it will be part of the final realisation: the player notices, forms a hypothesis and gets the confirmation at the end.</p>
+<h2 id="344-why-the-illusion-matters-to-design">34.4 Why the illusion matters to design</h2>
+<p>Because every enemy is an illusion, enemies can be anything. A dragon could appear, and it would make sense: the wizard read books about dragons. The lore gives the game freedom while keeping it coherent.</p>
+<hr />
+<h1 id="35-ending-and-reality-mode">35. Ending and Reality Mode</h1>
+<p>At the end of the game, the quartz breaks and the wizard sees reality.</p>
+<p>Finishing the game unlocks a new mode, <strong>Reality</strong>, in which the player sees what was really happening all along.</p>
+<hr />
+<h1 id="36-audio-direction">36. Audio Direction</h1>
+<p><strong>TBD.</strong> The prototype has no audio yet.</p>
+<hr />
+<h1 id="37-technical-direction">37. Technical Direction</h1>
+<p>The prototype is built in HTML5 and JavaScript on a single canvas, and runs in a web browser.</p>
+<p>HTML was chosen because it allows fast prototyping: ideas are quick to experiment with and play, which suits a project whose purpose is testing mechanics.</p>
+<p>The prototype runs as a single self-contained HTML file.</p>
+<hr />
+<h1 id="38-monetization">38. Monetization</h1>
+<p>There is no monetization plan. If someone is interested in the game commercially, that option is open for discussion.</p>
+<hr />
+<h1 id="39-prototype-scope">39. Prototype Scope</h1>
+<p>The current prototype contains:</p>
+<ul>
+<li>the wizard, movement and animation</li>
+<li>the hypnosis scan</li>
+<li>five enemy types and four bullet types</li>
+<li>two-slot allies with commanded fire and limited ammo</li>
+<li>enemy behaviours, behaviour changes and wave reactions</li>
+<li>enemy fusion (ten forms) and fusion breaking</li>
+<li>the fusion meter, ally merging and the ultimate</li>
+<li>sprinters</li>
+<li>the sleep phase, betrayal and recovery</li>
+<li>blocks, pillars, doors and keys</li>
+<li>seven missions</li>
+<li>main menu, pause menu, options, how to play, guided tutorial and tips</li>
+<li>scoring and game over statistics</li>
+</ul>
+<hr />
+<h1 id="40-full-game-scope-planned">40. Full Game Scope (planned)</h1>
+<ul>
+<li>Campaign</li>
+<li>Bosses</li>
+<li>Leaderboards</li>
+<li>Reality mode and the ending</li>
+<li>Gamepad support</li>
+<li>Final art direction (TBD)</li>
+<li>Audio (TBD)</li>
+<li>Mission objectives as real win/fail conditions (TBD)</li>
+<li>Final name (TBD)</li>
+</ul>
+<hr />
+<h1 id="41-what-clear-quartz-wizard-should-never-become">41. What Clear Quartz Wizard Should Never Become</h1>
+<p><strong>Status: Incomplete — to be written as development continues.</strong></p>
+<p>Topics to consider:</p>
+<ul>
+<li>the difficulty race the genre is known for</li>
+<li>mechanics that cannot be explained by the hypnosis</li>
+<li>screens where the player cannot read what is about to happen</li>
+<li>systems that make the player feel vulnerable while they can still scan and dodge</li>
+</ul>
+<hr />
+<h1 id="42-design-philosophy">42. Design Philosophy</h1>
+<p>Clear Quartz Wizard is built on one constraint: the player cannot shoot.</p>
+<p>Everything else follows from it. Because the player cannot destroy enemies directly, enemies become resources. Because enemies are resources, their <strong>behaviour</strong> matters more than their bullet patterns. And because every enemy is an illusion, any behaviour can exist and still make sense.</p>
+<p>The game should be:</p>
+<ul>
+<li>immediately understandable</li>
+<li>readable at every moment</li>
+<li>risky to play greedily, and rewarding when it works</li>
+<li>full of live decisions rather than memorised patterns</li>
+<li>coherent with its lore</li>
+</ul>
+<hr />
+<h1 id="43-portfolio-value">43. Portfolio Value</h1>
+<p>Clear Quartz Wizard demonstrates:</p>
+<ul>
+<li>turning a single phrase into a playable prototype in one week</li>
+<li>designing a core mechanic that inverts a genre convention</li>
+<li>building a lore that justifies the core mechanics</li>
+<li>risk-and-reward design</li>
+<li>designing enemy behaviour as the centre of level design</li>
+<li>balancing through self-playtesting (ally count, sleep-phase length, betrayal)</li>
+<li>designing feedback and readability</li>
+<li>designing a tutorial and onboarding</li>
+<li>recognising an emergent player strategy</li>
+</ul>
+<hr />
+<h1 id="44-final-design-summary">44. Final Design Summary</h1>
+<p>Clear Quartz Wizard asks a simple question:</p>
+<p><strong>Can a shoot 'em up work if the player cannot shoot?</strong></p>
+<p>This prototype is its early answer: a game where enemies are not only obstacles but things to take, use and combine, held together by a story in which the player was never really the one in control.</p>
+<p>The core activity is:</p>
+<p><strong>Spot → approach → scan → control → merge → unleash.</strong></p>
+<footer class="foot"><a href="../index.html#clear-quartz-wizard">Back to the Clear Quartz Wizard case study</a><span>Clear Quartz Wizard · Game design document</span></footer>
+</main>
+</div>
+</body>
+</html>

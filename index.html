@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Game design portfolio of Abdou Nouioua: Warpbound, Clear Quartz Wizard and FiveTen.">
+<title>Mohammed Abdessamed Nouioua Portfolio</title>
+<script>
+
+window.GAME_BUILDS = {
+  "warpbound":           "play/warpbound.html",
+  "clear-quartz-wizard": "play/clear-quartz-wizard.html"
+};
+</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Martian+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a level-editor sheet. The page sits on a 32px tile grid (Warpbound's tile size),
+   every edge is square like a tile, screenshots sit in editor-window frames, and each
+   project carries one hue taken from its own game. */
+:root{
+  --paper:#eff1f5; --panel:#ffffff; --ink:#151a2d; --ink-2:#4c5370; --line:#cbd1de;
+  --grid:rgba(21,26,45,.055);
+  --accent:#2747d9; --on-accent:#ffffff;
+  --strip:#151a2d; --strip-fg:#eff1f5;
+  --wb:#b4560f; --cqw:#5a3ed0; --ft:#0a7a5c;
+  --note:#8a5a00; --note-bg:#fff5d9;
+  --display:"Bricolage Grotesque","Arial Narrow",system-ui,sans-serif;
+  --body:"Hanken Grotesk","Segoe UI",system-ui,sans-serif;
+  --mono:"Martian Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --tile:32px;
+  --hue:var(--accent);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0d101b; --panel:#151927; --ink:#e8ebf4; --ink-2:#9ba3bd; --line:#2a3046;
+    --grid:rgba(232,235,244,.04);
+    --accent:#8aa2ff; --on-accent:#0d101b;
+    --strip:#232a40; --strip-fg:#e8ebf4;
+    --wb:#f0a25a; --cqw:#b5a3ff; --ft:#5ad6ae;
+    --note:#f0c060; --note-bg:#2a2412;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0d101b; --panel:#151927; --ink:#e8ebf4; --ink-2:#9ba3bd; --line:#2a3046;
+  --grid:rgba(232,235,244,.04);
+  --accent:#8aa2ff; --on-accent:#0d101b;
+  --strip:#232a40; --strip-fg:#e8ebf4;
+  --wb:#f0a25a; --cqw:#b5a3ff; --ft:#5ad6ae;
+  --note:#f0c060; --note-bg:#2a2412;
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0; background-color:var(--paper); color:var(--ink);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:var(--tile) var(--tile);
+  font:400 17px/1.6 var(--body); -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1120px; margin-inline:auto; padding-inline:20px; padding-block:0 64px}
+a{color:var(--accent); text-underline-offset:.18em}
+a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+h1,h2,h3{font-family:var(--display); text-wrap:balance; margin:0; letter-spacing:-.02em}
+p{margin:0}
+img{display:block; max-width:100%; height:auto}
+[hidden]{display:none!important}
+
+/* ---------- top bar ---------- */
+.top{display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:8px 24px; padding-block:22px; border-bottom:1px solid var(--line)}
+.mark{font:700 1.25rem/1 var(--display); color:var(--ink); text-decoration:none; letter-spacing:-.02em}
+.mark small{font:400 .66rem/1 var(--mono); color:var(--ink-2); letter-spacing:.06em; text-transform:uppercase; margin-left:10px}
+.nav{display:flex; gap:22px}
+.nav a{font:500 .72rem/1 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--ink-2); text-decoration:none; padding-block:6px; border-bottom:2px solid transparent}
+.nav a:hover{color:var(--ink)}
+.nav a[aria-current="page"]{color:var(--ink); border-bottom-color:var(--ink)}
+
+/* ---------- shared bits ---------- */
+.tag{display:flex; align-items:center; gap:10px; font:500 .7rem/1.4 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--hue)}
+.tag::before{content:""; flex:none; width:10px; height:10px; background:var(--hue)}
+.btns{display:flex; flex-wrap:wrap; gap:10px}
+.btn{display:inline-flex; align-items:center; gap:8px; font:500 .74rem/1 var(--mono); text-transform:uppercase; letter-spacing:.06em; padding:13px 16px; border:1px solid var(--ink); background:var(--ink); color:var(--paper); text-decoration:none; cursor:pointer}
+.btn:hover{background:var(--accent); border-color:var(--accent); color:var(--on-accent)}
+.btn.ghost{background:transparent; color:var(--ink)}
+.btn.ghost:hover{background:var(--ink); border-color:var(--ink); color:var(--paper)}
+
+/* editor-window frame around every screenshot */
+.win{margin:0; border:1px solid var(--strip); background:var(--panel); min-width:0}
+.win-bar{display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--strip); color:var(--strip-fg); font:400 .66rem/1 var(--mono); letter-spacing:.04em; padding:9px 12px}
+.win-bar span{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0}
+.win-bar span:first-child::before{content:""; display:inline-block; width:8px; height:8px; margin-right:9px; background:var(--hue)}
+.win-bar span:last-child{flex:none; opacity:.65}
+.win img{width:100%}
+.win figcaption{font-size:.86rem; line-height:1.5; color:var(--ink-2); padding:10px 12px; border-top:1px solid var(--line)}
+
+.draft{border:1.5px dashed var(--note); background:var(--note-bg); padding:14px 16px; font-size:.93rem; line-height:1.55; max-width:66ch}
+.draft b{display:block; font:500 .66rem/1 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--note); margin-bottom:8px}
+
+/* ---------- home ---------- */
+.hero{display:grid; gap:22px; padding-block:64px 56px}
+.hero .tag{--hue:var(--ink-2)}
+.hero h1{font-size:clamp(2.3rem,6.4vw,4.9rem); font-weight:800; line-height:1.02; letter-spacing:-.035em; max-width:15ch}
+.sel{background:var(--accent); color:var(--on-accent); padding:0 .14em; -webkit-box-decoration-break:clone; box-decoration-break:clone}
+.lede{font-size:1.16rem; line-height:1.55; max-width:58ch; color:var(--ink-2)}
+.lede strong{color:var(--ink); font-weight:600}
+
+.work-head{display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-block:14px; border-top:1px solid var(--ink)}
+.work-head h2{font:500 .72rem/1 var(--mono); letter-spacing:.08em; text-transform:uppercase}
+.work-head p{font:400 .68rem/1 var(--mono); color:var(--ink-2); letter-spacing:.04em}
+.entry{display:grid; grid-template-columns:minmax(0,7fr) minmax(0,5fr); gap:36px; align-items:center; padding-block:36px; border-top:1px solid var(--line)}
+.entry-text{display:grid; gap:14px; min-width:0}
+.entry h3{font-size:clamp(1.8rem,3.4vw,2.5rem); font-weight:750; line-height:1.05}
+.entry h3 a{color:inherit; text-decoration:none}
+.entry h3 a:hover{color:var(--hue)}
+.entry p{max-width:44ch}
+.facts{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:6px}
+.facts li{font:400 .66rem/1 var(--mono); letter-spacing:.03em; color:var(--ink-2); border:1px solid var(--line); background:var(--panel); padding:7px 9px}
+.entry .btns{margin-top:6px}
+a.win{display:block; color:inherit; text-decoration:none}
+
+/* FiveTen: its pixel logo on the home card, phone screenshots on its page */
+.logo-panel{aspect-ratio:5/3; max-width:100%; display:grid; place-items:center; background:#000}
+.logo-panel img{width:min(40%,200px); height:auto; image-rendering:pixelated}
+.case>*,.block>*,.decision>*{min-width:0}
+.phones{display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,210px)); gap:14px; margin:0; padding:0; list-style:none; min-width:0}
+.phones.six{grid-template-columns:repeat(auto-fill,minmax(112px,1fr))}
+.phone{margin:0; border:1px solid var(--strip); background:var(--panel); display:grid; align-content:start; width:100%; min-width:0}
+.phone img{width:100%; height:auto; background:#000}
+.phone figcaption{font-size:.8rem; line-height:1.4; color:var(--ink-2); padding:8px 10px; border-top:1px solid var(--line)}
+
+/* ---------- case studies ---------- */
+.case{display:grid; gap:44px; padding-block:28px 0; max-width:940px}
+.back{font:500 .7rem/1 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--ink-2); text-decoration:none; justify-self:start}
+.back:hover{color:var(--ink)}
+.case-head{display:grid; gap:18px}
+.case-head h1{font-size:clamp(2.6rem,7.5vw,5rem); font-weight:800; line-height:.98; letter-spacing:-.04em}
+.pitch{font-size:1.22rem; line-height:1.5; max-width:56ch}
+.spec{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:0 28px; margin:10px 0 0}
+.spec div{border-top:1px solid var(--line); padding-block:12px; min-width:0}
+.spec dt{font:500 .64rem/1 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--ink-2); margin-bottom:7px}
+.spec dd{margin:0; font-size:.95rem; line-height:1.45}
+
+.block{display:grid; gap:16px; min-width:0}
+.block>h2{font-size:1.7rem; font-weight:750; padding-top:18px; border-top:1px solid var(--ink)}
+.block>p,.block>ul{max-width:66ch}
+.block ul{margin:0; padding-left:1.15em}
+.block li+li{margin-top:6px}
+
+.decision{display:grid; gap:12px; padding-block:22px 6px; border-top:1px solid var(--line); min-width:0}
+.decision:first-of-type{border-top:0; padding-top:4px}
+.decision h3{font-size:1.32rem; font-weight:700; line-height:1.2; max-width:30ch}
+.decision>p{max-width:66ch}
+.lbl{display:block; font:500 .64rem/1 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--hue); margin-bottom:5px}
+.decision .win{margin-top:8px}
+
+.scroll{overflow-x:auto; border:1px solid var(--line); background:var(--panel)}
+table{border-collapse:collapse; width:100%; font-size:.92rem; line-height:1.45}
+th{font:500 .62rem/1.3 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--ink-2); text-align:left; padding:11px 14px; white-space:nowrap}
+td{padding:11px 14px; border-top:1px solid var(--line); vertical-align:top}
+td.k{font:400 .74rem/1.6 var(--mono); white-space:nowrap}
+td.n{font:400 .76rem/1.6 var(--mono); white-space:nowrap; font-variant-numeric:tabular-nums; color:var(--hue)}
+.rooms td:nth-child(2){min-width:230px}
+.rooms td:nth-child(3){min-width:240px}
+
+/* in-page player */
+.player{margin:0; display:grid; gap:0; border:1px solid var(--strip); background:var(--panel)}
+.stage{position:relative; width:100%; max-width:100%; aspect-ratio:var(--ar); background:#05060b; overflow:hidden}
+.stage img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover}
+.stage iframe{position:absolute; inset:0; width:100%; height:100%; border:0; background:#05060b}
+.stage .btn{position:absolute; left:50%; bottom:9%; transform:translateX(-50%); font-size:.82rem; padding:16px 22px; background:var(--accent); border-color:var(--accent); color:var(--on-accent); white-space:nowrap}
+.stage .btn:hover{filter:brightness(1.12)}
+.player-foot{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 20px; padding:10px 12px; border-top:1px solid var(--line); font-size:.86rem; color:var(--ink-2)}
+.player-foot button{font:500 .66rem/1 var(--mono); text-transform:uppercase; letter-spacing:.06em; padding:8px 10px; border:1px solid var(--ink); background:transparent; color:var(--ink); cursor:pointer}
+.player-msg{padding:10px 12px; border-top:1px solid var(--line); font-size:.9rem; background:var(--note-bg)}
+.keys{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:8px 18px; font-size:.88rem; color:var(--ink-2)}
+.keys .keys-label{font:500 .62rem/1.9 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--ink); min-width:76px}
+kbd{font:500 .68rem/1 var(--mono); display:inline-block; padding:5px 7px; margin-right:6px; border:1px solid var(--ink-2); border-bottom-width:2px; background:var(--panel); color:var(--ink)}
+
+.block .fusions{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:0; background:var(--panel); border-top:1px solid var(--line); border-left:1px solid var(--line); max-width:none}
+.fusions li{margin:0; background:var(--panel); box-shadow:inset -1px -1px 0 var(--line); padding:11px 14px; display:flex; justify-content:space-between; gap:12px; font:400 .7rem/1.4 var(--mono)}
+.fusions li+li{margin-top:0}
+.fusions b{font-weight:500; color:var(--hue)}
+
+.next{display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; padding-top:22px; border-top:1px solid var(--ink)}
+
+/* ---------- FiveTen: number blocks, target ladder, quotes ---------- */
+.board{display:grid; gap:14px; padding:18px 16px; background:var(--panel)}
+.row{display:flex; flex-wrap:wrap; align-items:center; gap:6px}
+.cell{display:grid; place-items:center; width:44px; height:44px; font:700 1.25rem/1 var(--display); border:1px solid var(--line); background:var(--paper); color:var(--ink)}
+.cell.hit{background:var(--hue); border-color:var(--hue); color:var(--panel)}
+.cell.shared{background:var(--hue); border-color:var(--ink); color:var(--panel); box-shadow:inset 0 0 0 3px var(--ink)}
+.eq{font:400 .7rem/1.4 var(--mono); color:var(--ink-2); margin-left:8px}
+.block .ladder{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:4px; max-width:none}
+.ladder li{margin:0; font:400 .68rem/1 var(--mono); font-variant-numeric:tabular-nums; padding:8px 9px; border:1px solid var(--line); background:var(--panel)}
+.block .ladder li+li{margin-top:0}
+.ladder li:first-child,.ladder li:last-child{background:var(--hue); border-color:var(--hue); color:var(--panel)}
+.ladder.loop li:not(:last-child)::after{content:"→"; margin-left:8px; color:var(--ink-2)}
+.ladder.loop li:first-child{background:var(--panel); border-color:var(--line); color:var(--ink)}
+.facts.praise li{color:var(--hue); font-weight:500}
+.quote{margin:0; font:600 1.3rem/1.35 var(--display); letter-spacing:-.01em; max-width:42ch; padding:2px 0 2px 16px; border-left:3px solid var(--hue)}
+.decision b{font-weight:600}
+
+/* ---------- about ---------- */
+.about{display:grid; grid-template-columns:minmax(0,7fr) minmax(0,5fr); gap:48px; padding-block:48px 0}
+.about h1{font-size:clamp(2.2rem,5.4vw,3.8rem); font-weight:800; line-height:1.02; letter-spacing:-.035em}
+.about-main{display:grid; gap:20px; align-content:start; min-width:0}
+.about-main p{max-width:60ch}
+.about-side{display:grid; gap:28px; align-content:start; min-width:0}
+.about-side h2{font:500 .68rem/1 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--ink-2); padding-bottom:10px; border-bottom:1px solid var(--ink); margin-bottom:12px}
+.plain{list-style:none; margin:0; padding:0; font-size:.96rem}
+.plain li{padding-block:8px; border-bottom:1px solid var(--line)}
+
+.foot{margin-top:72px; padding-top:18px; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px 24px; font:400 .66rem/1.5 var(--mono); letter-spacing:.04em; color:var(--ink-2)}
+
+@media (max-width:780px){
+  body{font-size:16px}
+  .hero{padding-block:40px 36px}
+  .entry,.about{grid-template-columns:minmax(0,1fr); gap:20px}
+  .entry{padding-block:28px}
+  .case{gap:36px}
+  .win-bar span:last-child{display:none}
+}
+@media (prefers-reduced-motion:no-preference){
+  .btn,.nav a,.entry h3 a{transition:background-color .15s,color .15s,border-color .15s}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <a class="mark" href="#home">Mohammed Abdessamed Nouioua<small>Video game designer</small></a>
+  <nav class="nav" aria-label="Site">
+    <a href="#work" data-nav="home">Work</a>
+    <a href="#about" data-nav="about">About</a>
+  </nav>
+</header>
+
+<main>
+
+<!-- ============================== HOME ============================== -->
+<section data-view="home" id="home">
+  <div class="hero">
+    <p class="tag">Video game designer</p>
+    <h1>Good ideas are everywhere. <span class="sel">Executing them</span> is the design.</h1>
+    <p class="lede">I design mechanics and experiences that challenge players while giving them the freedom to find their own way forward. I am a video game designer and computer engineering student.</p>
+  </div>
+
+  <div id="work">
+    <div class="work-head">
+      <h2>Selected work</h2>
+      <p>3 projects</p>
+    </div>
+
+    <article class="entry" style="--hue:var(--wb)">
+      <a class="win" href="#warpbound" aria-label="Warpbound case study">
+        <div class="win-bar"><span>warpbound / R3</span><span>800 × 480</span></div>
+        <img src="img/wb/r3-throw.png" width="1280" height="768" alt="Warpbound room R3: Namir throws his gold sphere toward the top of a wall he can't jump.">
+      </a>
+      <div class="entry-text">
+        <p class="tag">Metroidvania · Shoot-'em-up · Action</p>
+        <h3><a href="#warpbound">Warpbound</a></h3>
+        <p>Teleport anywhere you want. Throw a fragile sphere and warp to it, open up the map with new spheres and layers, then repair your crashed jet and fly.</p>
+        <ul class="facts"><li>22 rooms</li><li>2 bosses</li><li>3 sphere types</li><li>8-wave flight</li></ul>
+        <div class="btns">
+          <a class="btn" href="#warpbound">Read the case study</a>
+          <a class="btn ghost" href="#warpbound" data-play>Play in browser</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="entry" style="--hue:var(--cqw)">
+      <a class="win" href="#clear-quartz-wizard" aria-label="Clear Quartz Wizard case study">
+        <div class="win-bar"><span>clear-quartz-wizard / the scan</span><span>1200 × 675</span></div>
+        <img src="img/cqw/03-scan.jpg" width="1200" height="675" alt="Clear Quartz Wizard: the wizard holds his scan beam on a drone while a cyan hypnosis ring closes around it.">
+      </a>
+      <div class="entry-text">
+        <p class="tag">Shoot 'em up · Action</p>
+        <h3><a href="#clear-quartz-wizard">Clear Quartz Wizard</a></h3>
+        <p>A shoot ’em up where you can’t shoot. Hypnotise enemies, capture them, and fire them at the rest of the wave.</p>
+        <ul class="facts"><li>7 missions</li><li>5 enemy types</li><li>10 fusions</li><li>Built in a week</li></ul>
+        <div class="btns">
+          <a class="btn" href="#clear-quartz-wizard">Read the case study</a>
+          <a class="btn ghost" href="#clear-quartz-wizard" data-play>Play in browser</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="entry" style="--hue:var(--ft)">
+      <a class="win" href="#fiveten" aria-label="FiveTen case study">
+        <div class="win-bar"><span>fiveten / Google Play</span><span>Android</span></div>
+        <div class="logo-panel"><img src="img/ft/logo.png" width="179" height="179" alt="The FiveTen logo: a blue 5 and a red 10 split by a white line, in pixel type."></div>
+      </a>
+      <div class="entry-text">
+        <p class="tag">Falling-block puzzle · EdTech · Android</p>
+        <h3><a href="#fiveten">FiveTen</a></h3>
+        <p>A falling-block puzzle built on addition. Place number blocks, hit the target sum, and clear the lines before the board fills.</p>
+        <ul class="facts"><li>Godot 4</li><li>Global leaderboard</li><li>2 abilities</li></ul>
+        <div class="btns">
+          <a class="btn" href="#fiveten">Read the case study</a>
+          <a class="btn ghost" href="https://play.google.com/store/apps/details?id=com.fivetenstudio.fiveten" target="_blank" rel="noopener">Google Play ↗</a>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ============================== WARPBOUND ============================== -->
+<article class="case" data-view="warpbound" id="warpbound" style="--hue:var(--wb)">
+  <a class="back" href="#work">← All work</a>
+
+  <header class="case-head">
+    <p class="tag">Metroidvania · Shoot-'em-up flight · Browser demo</p>
+    <h1 tabindex="-1">Warpbound</h1>
+    <p class="pitch">Teleport anywhere you want. Throw a fragile sphere and warp to it, open up the map with new spheres and layers, then repair your crashed jet and fly out in a shoot-'em-up.</p>
+    <dl class="spec">
+      <div><dt>Role</dt><dd>Solo: game design, systems design, level design and story, plus the level and wave editors</dd></div>
+      <div><dt>Development</dt><dd>About three weeks, from the first ideas to the playable demo</dd></div>
+      <div><dt>Platform</dt><dd>Web browser on PC, mouse and keyboard</dd></div>
+      <div><dt>Build</dt><dd><span data-build-id="warpbound">Latest build</span>, HTML5 canvas and JavaScript</dd></div>
+    </dl>
+    <div class="btns">
+      <a class="btn ghost" href="docs/warpbound-gdd.html">Read the full GDD</a>
+    </div>
+  </header>
+
+  <figure class="player" data-slot="warpbound" data-title="Warpbound" style="--ar:5/3">
+    <div class="stage">
+      <img src="img/wb/title.jpg" width="1280" height="768" alt="Warpbound title screen, with Namir's crashed jet in the desert below the logo.">
+      <button class="btn" type="button" id="play-warpbound">▶ Play Warpbound</button>
+    </div>
+    <p class="player-msg" hidden>If the game stays blank here, <a data-build-link="warpbound" href="play/warpbound.html" target="_blank" rel="noopener">open it on its own page</a>.</p>
+    <figcaption class="player-foot">
+      <span>Needs a keyboard and mouse. Click the game once so it takes the keyboard. <a data-build-link="warpbound" href="play/warpbound.html" target="_blank" rel="noopener">Open on its own page ↗</a></span>
+      <button type="button" class="stop" id="stop-warpbound" hidden>Close game</button>
+    </figcaption>
+  </figure>
+
+  <ul class="keys" aria-label="Warpbound controls on foot">
+    <li class="keys-label">On foot</li>
+    <li><kbd>A</kbd><kbd>D</kbd>move</li>
+    <li><kbd>Space</kbd>jump</li>
+    <li><kbd>Left click</kbd>sword thrust</li>
+    <li><kbd>Hold right click</kbd>aim</li>
+    <li><kbd>+ Left click</kbd>throw</li>
+    <li><kbd>K</kbd>teleport or detonate</li>
+    <li><kbd>E</kbd><kbd>Q</kbd>switch sphere, sword</li>
+    <li><kbd>W</kbd>talk, board, travel</li>
+    <li><kbd>M</kbd>map</li>
+  </ul>
+  <ul class="keys" aria-label="Warpbound controls in the jet">
+    <li class="keys-label">In the jet</li>
+    <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>fly</li>
+    <li><kbd>Hold J</kbd>fire the beam</li>
+    <li><kbd>Q</kbd>switch beam</li>
+    <li><kbd>Esc</kbd>pause</li>
+  </ul>
+
+  <section class="block">
+    <h2>The idea</h2>
+    <p>Warpbound was my first project idea ever. I knew the idea was good, but I also knew I didn't yet have the design skill to make it good. So I started with something very small, FiveTen, then a shoot-'em-up. After those two I came back with far more knowledge and experience, to a genre I love.</p>
+    <p>Teleportation isn't new. Metroidvanias like Bloodstained: Ritual of the Night already have it. I wanted to make it the core mechanic, the identity of the whole game. The game that really inspired me was Velocity 2X. I loved its teleportation, and it mixes shoot-'em-up levels with platforming levels. Both ideas ended up in Warpbound.</p>
+    <blockquote class="quote">Teleport anywhere you want.</blockquote>
+    <p>The demo is a 22-room desert map with three types of sphere, two elemental swords, six enemy types, two bosses and a crashed jet you repair. Once the jet flies, the game turns into an eight-wave shoot-'em-up that ends the demo.</p>
+  </section>
+
+  <section class="block">
+    <h2>The design problem is freedom</h2>
+    <p>The idea was never the problem. If the player can teleport a lot, at any time, they can skip a level completely, and ordinary platforming stops meaning anything. The level design has to be much more specific than usual.</p>
+    <blockquote class="quote">How much freedom can I give the player before the level design stops mattering?</blockquote>
+    <p>The player has to feel free, but that freedom has to be controlled enough for the design to still speak. Every power gets a limit:</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Limit</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td class="k">One sphere at a time</td><td>No spamming, and it's always clear where you'll teleport.</td></tr>
+          <tr><td class="k">The sphere is fragile</td><td>It breaks on the first wall, so it can't bounce around corners to reach anywhere.</td></tr>
+          <tr><td class="k">8-direction aim</td><td>Throws have to be lined up, so alignment matters.</td></tr>
+          <tr><td class="k">Challenge rooms</td><td>The sphere doesn't work at all inside them.</td></tr>
+          <tr><td class="k">Locked rewards</td><td>Most rewards sit behind keys or objectives, like defeating every enemy.</td></tr>
+          <tr><td class="k">Fewer platforming rewards</td><td>Platforming alone is easy to teleport past, so it rarely guards a reward.</td></tr>
+          <tr><td class="k">Tool-specific obstacles</td><td>Some enemies and walls only give way to one ability.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The demo also gives the player their end-game power on purpose. In the full game you start without the sphere and earn everything over the whole adventure. Being able to skip whatever you want near the end is the reward for playing and finishing, which suits a metroidvania. The demo shows that final form.</p>
+  </section>
+
+  <section class="block">
+    <h2>How it plays</h2>
+    <ol class="ladder loop" aria-label="The core loop">
+      <li>Explore</li><li>Hit a wall you can't pass</li><li>Remember it</li><li>Find an ability</li><li>Return</li><li>Repair the jet</li><li>Fly</li>
+    </ol>
+    <p>Moment to moment, you read the room, hold right click to aim in one of eight directions, and throw. While the sphere flies you decide: teleport to it, let it break, cancel it, or, with the bomb, set it off. Then you land and fight with the sword, switching swords or spheres as the room asks.</p>
+  </section>
+
+  <section class="block">
+    <h2>Design decisions</h2>
+
+    <div class="decision">
+      <h3>A sphere, not an arrow</h3>
+      <p><span class="lbl">Problem</span>My first idea was an arrow: shoot it, then teleport to where it lands. If the arrow deals damage whether you teleport or not, there's no challenge left. You can stay far away and kill every enemy with it.</p>
+      <p><span class="lbl">Decision</span>The story came first and narrowed it to a sphere: the hero is a jet pilot, and the TPS is the scientific weapon the story revolves around. Then I split the arrow's two jobs apart. The normal sphere moves you. It can still hit an enemy for 1 damage, but the hit destroys it, so you lose the teleport. The bomb sphere fights, but setting it off takes the place of the teleport.</p>
+      <blockquote class="quote">You can have damage and you can have teleporting, but never both in a single item.</blockquote>
+    </div>
+
+    <div class="decision">
+      <h3>Every rule of the sphere has a reason</h3>
+      <p><span class="lbl">Breaks on the first wall</span>In the story the TPS is fragile. In play, it stops the sphere bouncing round corners to reach anywhere, and it gives layers something to upgrade.</p>
+      <p><span class="lbl">One sphere at a time</span>Throw three, then press teleport: which one do you go to? The logical answer, the first, makes the other two useless. Several spheres would also be confusing, and even more so in combat.</p>
+      <p><span class="lbl">Eight directions</span>Free aim would be overpowered. Eight directions give alignment a purpose and feel good in platforming.</p>
+      <p><span class="lbl">Separate throw and teleport buttons</span>Because of the sticky wheel. You keep holding the aim button and steer it with WASD, so one shared button wouldn't work.</p>
+      <p><span class="lbl">Landing</span>You arrive centred on the sphere if there's room. If not, you need two empty tiles stacked vertically, the sphere's tile plus the one above or below, and you're fitted into that column as close to the sphere as possible. It keeps teleporting smooth and fair.</p>
+      <figure class="win">
+        <div class="win-bar"><span>R3</span><span>25 × 15 tiles</span></div>
+        <img src="img/wb/r3-throw.png" width="1280" height="768" alt="Room R3: Namir stands before a tall block while his sphere, ringed in gold, flies up toward its top.">
+        <figcaption>R3 teaches by failure, with no text. A jump clears the first gap and not the second, so you throw and teleport. Falling short drops you into quicksand, which gives you time to climb out.</figcaption>
+      </figure>
+    </div>
+
+    <div class="decision">
+      <h3>Layers let rooms ask for an exact strength</h3>
+      <p><span class="lbl">Decision</span>Each layer lets the sphere survive one more contact: a bounce off a wall, or a pass through a sandfall. That lets me build a room for an exact number of layers. A room with four sandfalls and an upgrade behind them can't be crossed with three, so you remember it and come back with four. That's a typical metroidvania room.</p>
+      <p>Layers are drawn as rings around the sphere. A growing sphere would eventually need collision of its own. The normal sphere's rings are golden, so a fully upgraded sphere turns gold. Each sphere type keeps its own layers, because they're different spheres.</p>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Sphere</th><th>Base layers</th><th>Upgrades in the demo</th><th>Maximum</th></tr></thead>
+          <tbody>
+            <tr><td class="k">Normal (gold)</td><td class="n">1, or 3 with Matryoshka</td><td class="n">+1 × 3</td><td class="n">6</td></tr>
+            <tr><td class="k">Sticky wheel (green)</td><td class="n">1</td><td class="n">+1 × 1, hidden</td><td class="n">2</td></tr>
+            <tr><td class="k">Bomb (red)</td><td class="n">1</td><td class="n">+1 × 3</td><td class="n">4</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figure class="win">
+        <div class="win-bar"><span>R4</span><span>the sandfall gate</span></div>
+        <img src="img/wb/r4.png" width="1280" height="768" alt="Room R4: turrets and a brute on the low road, and a sandfall cutting off the high road at the top right.">
+        <figcaption>The high road ends at a sandfall. Only a sphere with layers survives the crossing, so the player comes back after the Matryoshka upgrade in R9.</figcaption>
+      </figure>
+    </div>
+
+    <div class="decision">
+      <h3>Three spheres, three kinds of puzzle</h3>
+      <p><span class="lbl">Sticky wheel</span>Sticks to the surface it hits. Hold right click and steer with WASD to roll it up walls, round corners and across ceilings. It opens puzzles where bouncing isn't useful, and spaces where you wait for enemies to move before going on. It breaks on enemies and spikes, because at its core it's still a TPS.</p>
+      <p><span class="lbl">Bomb sphere</span>An attack and a puzzle solver: a 64 px blast for 3 damage that breaks cracked walls, crumbly floor and a guardian's guard. It only goes off when you press the button. Think of it as C4. It would be weird if it went off by itself, so I switched off "explode when out of layers".</p>
+    </div>
+
+    <div class="decision">
+      <h3>A thrust, not a slash, and swords that change the world</h3>
+      <p><span class="lbl">Decision</span>The sword used to swing in an arc. I replaced it with a straight thrust toward the cursor in eight directions, because I want players to be precise, not to spam the attack button. Direction adds a dimension to combat, and positioning starts to matter.</p>
+      <p>The elemental swords follow common sense: if you have ice, you'd expect it to affect the world. It rewards players for thinking logically, and permafrost and very hot lava let a room say "not with this sword".</p>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Sword</th><th>Effect on the world</th><th>Can't affect</th></tr></thead>
+          <tbody>
+            <tr><td class="k">Fire sword</td><td>Melts ice into water</td><td>Permafrost</td></tr>
+            <tr><td class="k">Ice sword</td><td>Freezes lava into solid rock, and water into ice</td><td>Very hot lava</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figure class="win">
+        <div class="win-bar"><span>R13</span><span>lava, the fire sword, a locked jet part</span></div>
+        <img src="img/wb/r13.png" width="1280" height="768" alt="Room R13: bands of lava across a red room, the fire sword on a narrow lane between them, and a jet part behind a locked door at the top right.">
+        <figcaption>The fire sword sits between the bands of lava. The jet part in the top corner waits behind a door whose key is in R12.</figcaption>
+      </figure>
+    </div>
+
+    <div class="decision">
+      <h3>Some enemies ignore your sword</h3>
+      <p><span class="lbl">Problem</span>I wanted players to use their items, and to use them in different ways.</p>
+      <p><span class="lbl">Decision</span>Forcing a particular ability is a common design tool. The eater turns enemies against each other: bait the turret into shooting it.</p>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Enemy</th><th>Behaviour</th><th>How to beat it</th></tr></thead>
+          <tbody>
+            <tr><td class="k">Turret</td><td>Fixed, fires shots</td><td>Sword or sphere</td></tr>
+            <tr><td class="k">Eater</td><td>Swallows your sphere</td><td>The sword only stuns it. A turret shot, a falling spike or a bomb kills it.</td></tr>
+            <tr><td class="k">Absorber</td><td>Its 84 px field catches the sphere and spirals it in. You can't teleport out.</td><td>Avoid its field, or set a bomb off inside it.</td></tr>
+            <tr><td class="k">Brute</td><td>Walks at you and winds up a punch. Only the punch hurts.</td><td>Sword hits stagger it and interrupt the punch.</td></tr>
+            <tr><td class="k">Flyer</td><td>Hovers and drifts</td><td>A sphere hit or a turret shot knocks it down for 3 s.</td></tr>
+            <tr><td class="k">Guardian</td><td>Its guard blocks everything, and spheres glance off it.</td><td>A bomb blast breaks the guard, then attack.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="decision">
+      <h3>Bosses built on the sphere</h3>
+      <p><span class="lbl">The Hedgehog, R8</span>He fires three spines, charges to a column of cracked ceiling spikes and parks right under it. Quicksand slows the charge. You knock the spikes down onto him, three hits. He's the exam for R6, the room where you first learn that cracked spikes can be knocked down. Next revision: a falling spike will stun him, and the sword will finish him.</p>
+      <figure class="win">
+        <div class="win-bar"><span>R8</span><span>the Hedgehog</span></div>
+        <img src="img/wb/r8.png" width="1280" height="768" alt="The Hedgehog boss arena: four cracked spikes hang from the ceiling over a quicksand floor, with the boss at the right.">
+        <figcaption>Four cracked spikes over quicksand. The gates on both sides open when he's down.</figcaption>
+      </figure>
+      <p><span class="lbl">The Slugger, R21</span>He came from a simple thought: the sphere bounces. A bouncing ball? Tennis. He bats your sphere straight back at you. A bomb knocks his guard down for a few seconds without ever hurting him, and that's your window to hit him with the sword. His gate hides a jet part.</p>
+      <figure class="win">
+        <div class="win-bar"><span>R21</span><span>the Slugger</span></div>
+        <img src="img/wb/r21.png" width="1280" height="768" alt="The Slugger, a big brawler with a bat, waits in his arena. His health bar reads: guard up, only a bomb breaks it.">
+        <figcaption>"Guard up — only a bomb breaks it." The jet part waits behind the gate on the right.</figcaption>
+      </figure>
+    </div>
+
+    <div class="decision">
+      <h3>Open at a crashed jet, because you'll fly it</h3>
+      <p><span class="lbl">Decision</span>The game opens at Namir's wrecked jet. It needs three parts, and each comes from a different approach to the same problem. A mechanic is sealed behind fallen rock next to the wreck: blow the wall open with the bomb sphere and he gives you the part that landed beside him. The second is behind a locked door at the end of a lava room, with its key in another room. The third is behind the Slugger's gate, reached through a cracked floor in the very first room.</p>
+      <figure class="win">
+        <div class="win-bar"><span>R1</span><span>the crash site</span></div>
+        <img src="img/wb/r1-mechanic.png" width="1280" height="768" alt="The crash site: Namir's wrecked jet and a capsule on the sand, a cracked rock wall on the right, and a dialogue box from the mechanic: Hey! Over here, behind the rocks!">
+        <figcaption>"Hey! Over here — behind the rocks!" The mechanic is sealed behind the cracked wall on the right. The capsule by the jet is one of three fast-travel points.</figcaption>
+      </figure>
+    </div>
+
+    <div class="decision">
+      <h3>A shoot-'em-up whose rules come from the swords</h3>
+      <p><span class="lbl">Decision</span>From the start the game had two kinds of sequence: the metroidvania map and shoot-'em-up flights. In the full game the jet is how you travel between biomes, and your current equipment decides its beams. With both swords the beam switches between normal, ice and fire, and every enemy is hurt by only one of them, so you read each enemy's element and switch beams constantly.</p>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Enemy</th><th>Element</th><th>Hurt only by</th><th>Shot</th></tr></thead>
+          <tbody>
+            <tr><td class="k">Drone</td><td>Normal</td><td>Normal beam</td><td>Aimed at you</td></tr>
+            <tr><td class="k">Frost wing</td><td>Ice</td><td>Fire beam</td><td>Straight ahead</td></tr>
+            <tr><td class="k">Ember wing</td><td>Fire</td><td>Ice beam</td><td>Three-shot spread</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figure class="win">
+        <div class="win-bar"><span>Flight · wave 2, Cold front</span><span>beam: normal</span></div>
+        <img src="img/wb/jet-cold.jpg" width="1280" height="768" alt="The jet fires a normal beam at a frost wing, which shows the label IMMUNE. More frost wings and a drone fly ahead.">
+        <figcaption>The normal beam on a frost wing: "IMMUNE". Only the fire beam hurts it.</figcaption>
+      </figure>
+      <p>The demo's flight has eight waves: Take-off, Cold front, Embers, The escort, Pillar run, The vault, Crossfire and Last stand. Some add moving terrain or walls and doors, and some react as they thin out: when the gunner falls the rest enrage, and when one is left they all dive. Being shot down only retries the current wave. Back on the ground, three fast-travel capsules, each powered by throwing a sphere into it, take the place of the fast-travel machines the full game puts in every biome.</p>
+      <figure class="win">
+        <div class="win-bar"><span>Flight · wave 5, Pillar run</span><span>moving terrain</span></div>
+        <img src="img/wb/jet-pillars.jpg" width="1280" height="768" alt="The jet flies between scrolling green pillars while drones, frost wings and ember wings attack.">
+        <figcaption>Pillar run: the terrain moves while all three enemy elements attack together.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Level design</h2>
+    <p>I build each room around one specific objective. When the rooms are done, I distribute the rewards across the map and balance them.</p>
+    <ul>
+      <li><b>Teach by failure, without killing.</b> R3 has no text, and quicksand gives a new player time to climb out.</li>
+      <li><b>Ability gates.</b> R4's sandfall needs a sphere with layers.</li>
+      <li><b>Remember and return.</b> Rooms built for an exact number of layers are meant to be revisited.</li>
+      <li><b>Optional side rooms.</b> Always a reward, never mandatory. The layer door in R2, right at the start, needs six layers, a fully upgraded sphere, and leads to the challenge room R20.</li>
+      <li><b>Reward exploring.</b> Any tile can hide another one behind it. When something appears behind a wall you destroyed, it should feel like surprise mixed with accomplishment.</li>
+      <li><b>Logic first.</b> Ice freezes, fire melts, a bomb waits for its button, and a wall you blew up stays broken.</li>
+    </ul>
+
+    <div class="decision">
+      <h3>The room I'm proudest of: R10</h3>
+      <p>The puzzle combines two types of sphere, and you have to swap between them quickly.</p>
+      <figure class="win">
+        <div class="win-bar"><span>R10</span><span>behind a cracked wall in R9</span></div>
+        <img src="img/wb/r10.png" width="1280" height="768" alt="Room R10: angled mini walls, a long strip of crumbly floor, very hot lava along the bottom and right, and a max-health upgrade at the top.">
+        <figcaption>Mini walls, crumbly floor and very hot lava, with a max-health upgrade at the top.</figcaption>
+      </figure>
+    </div>
+
+    <div class="scroll">
+      <table class="rooms">
+        <thead><tr><th>Room</th><th>What's there</th><th>Gated by</th></tr></thead>
+        <tbody>
+          <tr><td class="k">R1 Crash site</td><td>The jet, a capsule, the mechanic behind cracked walls, a cracked floor down to R21</td><td>—</td></tr>
+          <tr><td class="k">R2 The sphere</td><td>The TPS, floor spikes, a layer door to R20</td><td>—</td></tr>
+          <tr><td class="k">R3 Two gaps</td><td>Quicksand gaps, bomb +1 layer behind cracked walls</td><td>—</td></tr>
+          <tr><td class="k">R4 Two ways</td><td>Turrets, a brute, crumbly floor, +1 layer. The high road ends at a sandfall.</td><td>—</td></tr>
+          <tr><td class="k">R4A</td><td>Very hot lava, a capsule</td><td>Sandfall (Matryoshka)</td></tr>
+          <tr><td class="k">R5 The eater</td><td>Turrets, cracked spikes, +1 layer, an upper exit to R11</td><td>—</td></tr>
+          <tr><td class="k">R6 Cracked ceiling</td><td>Cracked spikes over lava</td><td>—</td></tr>
+          <tr><td class="k">R7 Junction</td><td>A brute, a turret, an eater, bomb +1 layer behind cracked walls</td><td>—</td></tr>
+          <tr><td class="k">R8 Hedgehog</td><td>Boss</td><td>—</td></tr>
+          <tr><td class="k">R9 Matryoshka</td><td>Matryoshka, sandfalls, a capsule, bomb +1 layer. Cracked walls hide two exits.</td><td>Boss gate</td></tr>
+          <tr><td class="k">R10</td><td>Mini walls, crumbly floor, very hot lava, max health +1</td><td>Cracked wall (bomb)</td></tr>
+          <tr><td class="k">R11</td><td>Ice, permafrost, absorbers, floor spikes, a hidden sticky +1 layer</td><td>—</td></tr>
+          <tr><td class="k">R12</td><td>A brute, a flyer, very hot lava, a key</td><td>via R4A</td></tr>
+          <tr><td class="k">R13</td><td>Lava, the fire sword, +1 layer, a jet part behind a locked door</td><td>Key from R12</td></tr>
+          <tr><td class="k">R15</td><td>A maze of cracked walls, the bomb sphere, max health +1</td><td>—</td></tr>
+          <tr><td class="k">R16</td><td>Permafrost, mini walls, two brutes, a key and door, the ice sword, a heart</td><td>—</td></tr>
+          <tr><td class="k">R18 (small)</td><td>The sticky wheel</td><td>via R16</td></tr>
+          <tr><td class="k">R19 (small)</td><td>A guardian, max health +1</td><td>Cracked wall (bomb)</td></tr>
+          <tr><td class="k">R20 (challenge)</td><td>No sphere. A flyer, a turret, crumbly floor, spikes, max health +1.</td><td>Layer door (6)</td></tr>
+          <tr><td class="k">R21</td><td>The Slugger, a jet part</td><td>Cracked floor in R1 (bomb)</td></tr>
+          <tr><td class="k">R22</td><td>Very hot lava, no reward yet</td><td>via R15</td></tr>
+          <tr><td class="k">R23</td><td>Planks, an absorber, no reward yet</td><td>via R21</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <figure class="win">
+      <div class="win-bar"><span>R20</span><span>challenge room · sphere off</span></div>
+      <img src="img/wb/r20.png" width="1280" height="768" alt="Challenge room R20: small floating platforms over a floor of spikes, with a flyer and a turret, and the sphere indicator reading off.">
+      <figcaption>A challenge room answers the freedom problem directly. The sphere is off, so nothing here can be skipped.</figcaption>
+    </figure>
+    <figure class="win">
+      <div class="win-bar"><span>Map</span><span>M / Tab</span></div>
+      <img src="img/wb/map.jpg" width="1280" height="768" alt="Warpbound's map: visited rooms as labelled boxes joined by their exits, with unvisited neighbours as dashed outlines.">
+      <figcaption>The map shows the rooms you've visited, placed by following their exits.</figcaption>
+    </figure>
+  </section>
+
+  <section class="block">
+    <h2>My own editors</h2>
+    <p>I wanted a quick way to test the ideas in my head, so I built a level editor and a wave editor. Being able to play an idea minutes after imagining it changed the design along the way.</p>
+    <ul>
+      <li><b>Level editor.</b> Paint rooms tile by tile, link them through their exits, and pair doors with keys, even across rooms. Set layer-door requirements, hidden tiles, plank angles and challenge rooms. Write NPC dialogue and design notes, tune the game's numbers, lay out the HUD, import custom tiles, play any room instantly and export a standalone build.</li>
+      <li><b>Wave editor.</b> It follows the one from my shoot-'em-up. Build waves enemy by enemy, add rules like "when the gunner falls, the rest enrage", add terrain, moving terrain and doors, and test-fly any wave.</li>
+    </ul>
+  </section>
+
+  <section class="block">
+    <h2>Sound</h2>
+    <p>Every sound in the demo is made in code with Web Audio: no audio files and no music. Footsteps change with the surface (sand, stone, wood, gravel, ice), sounds are panned by where they happen in the room, and held sounds loop for as long as they last: the jet engine, quicksand dragging you down, the sticky wheel rolling, and a different beam sound for each element. Options has a volume for sound effects.</p>
+  </section>
+
+  <section class="block">
+    <h2>The story</h2>
+    <p>Namir is a jet pilot, one of the best in his planet's air defence. His planet's scientists built a weapon, the TPS, a teleportation sphere. Terrorists heard about it and attacked. They destroyed the planet but couldn't find the TPS. Namir and his squad were sent to retrieve it first. They fought in the sky, his whole squad was wiped out, and his damaged jet crashed into the desert where the demo begins.</p>
+    <p>Namir means tiger in Arabic. In many mythologies, the Chinese ones for example, the tiger is a guardian. Namir is the guardian of the sky, which is why the enemy who killed his squad and brought down his jet is a dragon.</p>
+  </section>
+
+  <section class="block">
+    <h2>What changed along the way</h2>
+    <ul>
+      <li><b>Arrow to sphere.</b> An arrow that dealt damage was too powerful as a core mechanic.</li>
+      <li><b>Arc slash to straight thrust.</b> Precision and positioning instead of button spam.</li>
+      <li><b>Growing sphere to layer rings.</b> A big sphere would have needed its own collision.</li>
+      <li><b>Bomb auto-detonation switched off.</b> A bomb should only go off when you press the button.</li>
+      <li><b>Planks, then planks and mini walls.</b> One you can jump through, one you can't.</li>
+      <li><b>Bombed walls now stay broken</b> for good.</li>
+    </ul>
+  </section>
+
+  <section class="block">
+    <h2>Numbers</h2>
+    <p>The values the current demo ships with.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Value</th><th>Setting</th><th>What it means in play</th></tr></thead>
+        <tbody>
+          <tr><td>Room</td><td class="n">25 × 15 tiles, 32 px</td><td>Exactly one 800 × 480 screen, so every throw reads at a glance.</td></tr>
+          <tr><td>Run speed</td><td class="n">230 px/s</td><td>About seven tiles a second.</td></tr>
+          <tr><td>Jump, gravity</td><td class="n">620 px/s, 1450 px/s²</td><td>Hold Space to jump higher.</td></tr>
+          <tr><td>Health</td><td class="n">3 → 7 hearts</td><td>Four +1 upgrades in the demo. Dying restarts the room with full health.</td></tr>
+          <tr><td>Quicksand</td><td class="n">45% speed, 2.6 s</td><td>You sink, but there's time to climb out.</td></tr>
+          <tr><td>Sphere</td><td class="n">580 px/s, 3 s</td><td>Straight line, no gravity, one at a time.</td></tr>
+          <tr><td>Teleport</td><td class="n">0.26 s</td><td>Recharge 0.3 s after a teleport, 0.5 s after a break.</td></tr>
+          <tr><td>Sticky wheel</td><td class="n">160 px/s</td><td>Rolling speed along surfaces.</td></tr>
+          <tr><td>Bomb</td><td class="n">64 px, 3 damage</td><td>Two tiles of blast. Only on your button.</td></tr>
+          <tr><td>Sword thrust</td><td class="n">52 px, 2 damage</td><td>0.2 s thrust, 0.34 s cooldown, 8 directions.</td></tr>
+          <tr><td>Jet</td><td class="n">290 px/s, 3 health</td><td>Continuous beam, 7 damage per second.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>What I learned</h2>
+
+    <div class="decision">
+      <h3>A good idea isn't enough</h3>
+      <p>Warpbound had to wait until I had the design skill to do it justice, and the two smaller projects were how I got it.</p>
+    </div>
+
+    <div class="decision">
+      <h3>Freedom has to be designed</h3>
+      <p>Each power I give the player takes some control away from the level design, so each one needs a limit.</p>
+    </div>
+
+    <div class="decision">
+      <h3>Try more than one approach, and test fast</h3>
+      <p>The three jet parts come from a favour, a locked door and a boss. Building my own editors let me play a room minutes after imagining it.</p>
+      <blockquote class="quote">Teleport anywhere you want, but the design still speaks.</blockquote>
+    </div>
+
+    <p>The full game grows this slice into five areas (a main area, the desert, snow, magma and a destroyed city) with six bosses and abilities earned gradually. Flights between biomes become real shoot-'em-up levels, with a fast-travel machine waiting in each new biome and cleared flights replayable from the main menu for better scores. Next on the demo: the Hedgehog's new stun-and-finish fight, and rewards for R22 and R23.</p>
+  </section>
+
+  <nav class="next" aria-label="More projects">
+    <a class="btn ghost" href="#work">← All work</a>
+    <a class="btn" href="#clear-quartz-wizard">Next: Clear Quartz Wizard →</a>
+  </nav>
+</article>
+
+<!-- ============================== CLEAR QUARTZ WIZARD ============================== -->
+<article class="case" data-view="clear-quartz-wizard" id="clear-quartz-wizard" style="--hue:var(--cqw)">
+  <a class="back" href="#work">← All work</a>
+
+  <header class="case-head">
+    <p class="tag">Shoot 'em up · Browser · Playable prototype</p>
+    <h1 tabindex="-1">Clear Quartz Wizard</h1>
+    <p class="pitch">A shoot 'em up where you cannot shoot. Your crystal hypnotises enemies, and the enemies you capture become your weapons.</p>
+    <dl class="spec">
+      <div><dt>Role</dt><dd>Solo: game design and development</dd></div>
+      <div><dt>Development</dt><dd>One week to the latest playable build</dd></div>
+      <div><dt>Platform</dt><dd>Web browser on PC, keyboard. Gamepad planned.</dd></div>
+      <div><dt>Build</dt><dd><span data-build-id="clear-quartz-wizard">Latest build</span>, HTML5 canvas and JavaScript</dd></div>
+    </dl>
+    <div class="btns">
+      <a class="btn ghost" href="docs/clear-quartz-wizard-gdd.html">Read the full GDD</a>
+    </div>
+  </header>
+
+  <figure class="player" data-slot="clear-quartz-wizard" data-title="Clear Quartz Wizard" style="--ar:16/9">
+    <div class="stage">
+      <img src="img/cqw/01-title.jpg" width="1200" height="675" alt="Clear Quartz Wizard main menu: the wizard on his broom, with the crystal on its tip.">
+      <button class="btn" type="button" id="play-cqw">▶ Play Clear Quartz Wizard</button>
+    </div>
+    <p class="player-msg" hidden>If the game stays blank here, <a data-build-link="clear-quartz-wizard" href="play/clear-quartz-wizard.html" target="_blank" rel="noopener">open it on its own page</a>.</p>
+    <figcaption class="player-foot">
+      <span>Needs a keyboard. Click the game once so it takes the keyboard. <a data-build-link="clear-quartz-wizard" href="play/clear-quartz-wizard.html" target="_blank" rel="noopener">Open on its own page ↗</a></span>
+      <button type="button" class="stop" id="stop-cqw" hidden>Close game</button>
+    </figcaption>
+  </figure>
+
+  <ul class="keys" aria-label="Clear Quartz Wizard controls">
+    <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>fly</li>
+    <li><kbd>Hold Space</kbd>scan</li>
+    <li><kbd>J</kbd><kbd>K</kbd><kbd>L</kbd>fire ally 1, ally 2, both</li>
+    <li><kbd>Shift</kbd>line allies up</li>
+    <li><kbd>Tab</kbd>merge allies</li>
+    <li><kbd>Q</kbd>switch merged weapon</li>
+    <li><kbd>O</kbd>ultimate</li>
+    <li><kbd>P</kbd>pause</li>
+  </ul>
+
+  <section class="block">
+    <h2>The idea</h2>
+    <p>After FiveTen I wanted to test my design skills in a completely different genre, and to show how I can turn a single phrase into a playable prototype. At first I had only one line:</p>
+    <blockquote class="quote">"A shmup where you cannot shoot."</blockquote>
+    <p>Everything else grew from it. The idea led to hypnosis, hypnosis led to the wizard, and the wizard led to the quartz. The goal of the project fits in three words: hypnotise and control.</p>
+    <p>The line came from a question about the genre's history. Space Invaders, Gradius and R-Type are legends, so why is the shoot 'em up almost gone today? My answer is that the genre followed a path with a dead end. Studios competed on one layer, difficulty. On arcade machines that made sense: a harder game meant more deaths, and more deaths meant more coins. The race led to bullet hell, which is a good genre, but it became so hardcore that it ended up belonging to a small group of players. There were exceptions, like the Cotton series and Ikaruga, but most games followed the same road. So I tried a different one.</p>
+    <blockquote class="quote">Can a shoot 'em up work if the player cannot shoot?</blockquote>
+    <p>I built it in HTML because I prototype fastest there, and the point was to try ideas quickly and play them.</p>
+  </section>
+
+  <section class="block">
+    <h2>How it plays</h2>
+    <p>The wizard has no weapon. Holding Space scans the enemy in front of him with his crystal, and when the hypnosis ring closes, that enemy becomes an ally. He can hold two allies, and they fire only when the player tells them to, with limited ammo. A mission ends when every enemy is gone, captured or destroyed. The wizard has five hearts. Losing them all cracks the crystal and starts the sleep phase.</p>
+    <ol class="ladder loop" aria-label="The core loop">
+      <li>Spot</li><li>Approach</li><li>Scan</li><li>Control</li><li>Merge</li><li>Unleash</li>
+    </ol>
+    <figure class="win">
+      <div class="win-bar"><span>Enemy roster</span><span>5 types</span></div>
+      <img src="img/cqw/15-enemy-roster.jpg" width="1200" height="675" alt="The five enemy types on top: Drone, Drone II, Spread, Laser and Shield. Below each, its ally form with a hypnotised swirl eye and its shot count.">
+      <figcaption>Top row: the five enemies. Bottom row: the same creatures as allies, with the hypnotised swirl in their eye and their ammo.</figcaption>
+    </figure>
+  </section>
+
+  <section class="block">
+    <h2>Design decisions</h2>
+
+    <div class="decision">
+      <h3>A capture has to be risked for</h3>
+      <p><span class="lbl">Problem</span>If the scan were instant, there would be no challenge: no push and pull, no risk, only reward.</p>
+      <p><span class="lbl">Decision</span>The scan takes time, reaches only 245 px in front of the wizard and slows him to 78% speed. To take a strong enemy you have to fly close to it and stay there. The scanned enemy freezes and shakes, but it keeps shooting, 2.6 times as fast, with shorter warnings and worse aim. It's a survival instinct, so the capture stays dangerous until the ring closes.</p>
+      <blockquote class="quote">If the reward is not risked for, there is no dopamine.</blockquote>
+      <p>Weakened enemies are easier to take, up to 65% easier at their last hit point. That joins the two halves of the game: you weaken an enemy with your allies, then you take it.</p>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Enemy</th><th>Capture at full HP</th><th>At 1 HP</th></tr></thead>
+          <tbody>
+            <tr><td class="k">Drone / Drone II</td><td class="n">≈ 1.3 s</td><td class="n">≈ 0.9 s</td></tr>
+            <tr><td class="k">Spread</td><td class="n">≈ 1.5 s</td><td class="n">≈ 1.0 s</td></tr>
+            <tr><td class="k">Laser</td><td class="n">≈ 1.7 s</td><td class="n">≈ 1.0 s</td></tr>
+            <tr><td class="k">Shield</td><td class="n">≈ 2.1 s</td><td class="n">≈ 1.1 s</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figure class="win">
+        <div class="win-bar"><span>The scan</span><span>reach 245 px</span></div>
+        <img src="img/cqw/03-scan.jpg" width="1200" height="675" alt="The wizard holds the scan beam on a drone. A cyan ring is closing around it while another drone above flashes red, about to fire.">
+        <figcaption>The cyan ring around the drone fills as the scan holds. The drone above it is red: it's about to shoot.</figcaption>
+      </figure>
+    </div>
+
+    <div class="decision">
+      <h3>Two allies, not one or three</h3>
+      <p><span class="lbl">Problem</span>The number of allies decides both how strong the player is and how many buttons they have to manage.</p>
+      <p><span class="lbl">Decision</span>One ally felt too limited. With three the game became easy: three allies firing together could reach every enemy on screen, and the threat disappeared. Each ally also has its own fire button, and a third one on top of moving, scanning and dodging felt unnecessary. Two felt balanced, in range and in the feeling of commanding two shooters. Capturing a third enemy replaces the oldest ally.</p>
+    </div>
+
+    <div class="decision">
+      <h3>Allies fire on command, with limited ammo</h3>
+      <p><span class="lbl">Problem</span>The game can't know which enemy the player wants to capture next. Allies that fired by themselves could destroy exactly the enemy the player was planning to take. And with unlimited shots, a Laser and a Shield together would be unstoppable.</p>
+      <p><span class="lbl">Decision</span>Allies only fire when told to, and every ally has a few shots. When they run out, the ally is gone, which forces the player to keep capturing new ones. Holding Shift lines both allies up at the wizard's height, so with so little ammo, every shot is aimed instead of wasted.</p>
+      <blockquote class="quote">The stronger the ally, the less ammo it has.</blockquote>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Ally</th><th>Shot</th><th>Ammo</th><th>Cooldown</th></tr></thead>
+          <tbody>
+            <tr><td class="k">Drone / Drone II</td><td>Single straight shot</td><td class="n">8</td><td class="n">0.22 s</td></tr>
+            <tr><td class="k">Spread</td><td>Three-way shot</td><td class="n">6</td><td class="n">0.48 s</td></tr>
+            <tr><td class="k">Laser</td><td>Piercing beam across the screen, 3 damage</td><td class="n">4</td><td class="n">0.72 s</td></tr>
+            <tr><td class="k">Shield</td><td>A 1.2 s protective bubble around the wizard</td><td class="n">3</td><td class="n">1.2 s</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>As long as the wizard can scan and dodge, nothing in the game should make the player feel vulnerable, even with no allies at all.</p>
+      <figure class="win">
+        <div class="win-bar"><span>Allies on command</span><span>2 slots</span></div>
+        <img src="img/cqw/04-allies-combat.jpg" width="1200" height="675" alt="The wizard with two captured allies beside him, each with an ammo ring. A column of blocks stands between him and the enemies, and a laser enemy's dashed aim line crosses the screen.">
+        <figcaption>Two allies with their ammo rings. The pink dashed line is a Laser enemy aiming before it fires.</figcaption>
+      </figure>
+    </div>
+
+    <div class="decision">
+      <h3>Losing your last heart isn't the end</h3>
+      <p><span class="lbl">Problem</span>I didn't want the run to end the moment health ran out. Old arcade shmups had continues for that. I wanted the same second chance, but tied to the lore.</p>
+      <p><span class="lbl">Decision</span>When the last heart goes, the quartz cracks, the hypnosis is released for a moment and the wizard falls asleep. Normal controls wouldn't feel right for a sleeping wizard, so he drifts down with flappy-bird physics and the player taps to keep him in the air. Any hit, wall or screen edge ends the run. Survive and the crystal repairs itself, and the hearts come back one at a time.</p>
+      <p><span class="lbl">Tuning</span>The sleep phase started at ten seconds. You usually lose your last heart when the screen is full of enemies, and ten seconds in front of them was impossible to survive whatever you did. Six seconds is the point where you feel the consequence but still have a real chance.</p>
+      <p><span class="lbl">Betrayal</span>While the wizard sleeps, his allies turn back into enemies. At first they attacked instantly from right beside him, which was too harsh. Now they fly back to where they were captured and hold their fire until they get there. The game never explains why they betray you. If it does, it will be part of the final realisation.</p>
+      <figure class="win">
+        <div class="win-bar"><span>Sleep phase</span><span>6 s</span></div>
+        <img src="img/cqw/11-sleep-phase.jpg" width="1200" height="675" alt="The wizard asleep on his broom with Z marks above him and a countdown over his empty hearts. His former allies fly away from him.">
+        <figcaption>The crystal has cracked. The countdown sits over the empty hearts, and the former allies head back to their posts.</figcaption>
+      </figure>
+    </div>
+
+    <div class="decision">
+      <h3>Scared enemies huddle together</h3>
+      <p><span class="lbl">Decision</span>When an enemy drops to half its health or less, it flies to the nearest other enemy and the two fuse into a bigger one that takes turns using both of their attacks. In the lore the birds are too scared, so they huddle together, like in cartoons. While it flies to its partner the weakened enemy stops shooting, so the player can scan or destroy it on the way. Scanning a finished fusion doesn't capture it. The enemies get confused about what they were scared of, and the fusion breaks back into its two halves, which can't fuse again.</p>
+      <p><span class="lbl">Change</span>At first both enemies had to be weakened. Now only the one that seeks the fusion does.</p>
+      <ul class="fusions" aria-label="The ten fusions">
+        <li><span>Drone + Drone</span><b>Twin Eye</b></li>
+        <li><span>Drone + Laser</span><b>Lancer</b></li>
+        <li><span>Drone + Shield</span><b>Sentinel</b></li>
+        <li><span>Drone + Spread</span><b>Hydra</b></li>
+        <li><span>Laser + Laser</span><b>Crossblade</b></li>
+        <li><span>Laser + Shield</span><b>Cannon</b></li>
+        <li><span>Laser + Spread</span><b>Trident</b></li>
+        <li><span>Shield + Shield</span><b>Fortress</b></li>
+        <li><span>Shield + Spread</span><b>Crab</b></li>
+        <li><span>Spread + Spread</span><b>Kraken</b></li>
+      </ul>
+      <figure class="win">
+        <div class="win-bar"><span>Fusion forms</span><span>10 pairs</span></div>
+        <img src="img/cqw/16-fusion-forms.jpg" width="1200" height="675" alt="The ten enemy fusion forms, each combining both parents inside a two-colour energy ring.">
+        <figcaption>Every pair has its own form, combining both parents inside a two-colour ring.</figcaption>
+      </figure>
+    </div>
+
+    <div class="decision">
+      <h3>Merging allies, and the ultimate</h3>
+      <p><span class="lbl">Decision</span>Allies merge for a different reason than enemies fuse. They aren't scared, they become stronger, because their commands are synchronised. Scanning fills a ring around the wizard. When it's full and he holds two allies, Tab merges them. The merge takes 2.2 seconds, and he moves at 35% speed while the two spiral together. The merged ally doubles each weapon's remaining ammo, and Q switches between the two weapons.</p>
+      <p>It takes both slots. Merging doubles the bullets, so if the player could capture a third enemy while holding it, nothing would stop them merging that one too. Merging is also the only way to the ultimate. Press O and the merged ally becomes one huge laser beam and is used up. The more ammo it has left, the stronger the beam, so there's a constant choice: spend the shots now, or save them for a bigger beam.</p>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Ammo left</th><th>Ultimate damage</th><th>Beam height</th></tr></thead>
+          <tbody>
+            <tr><td class="k">Full, never fired</td><td class="n">30</td><td class="n">320 px</td></tr>
+            <tr><td class="k">Half</td><td class="n">≈ 17</td><td class="n">≈ 170 px</td></tr>
+            <tr><td class="k">One shot</td><td class="n">3</td><td class="n">20 px, a normal laser</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Merging is my favourite mechanic. I think players will start wondering what two specific allies will look like together, and finding out is fun.</p>
+      <figure class="win">
+        <div class="win-bar"><span>Ultimate</span><span>100% power</span></div>
+        <img src="img/cqw/10-ultimate.jpg" width="1200" height="675" alt="A huge white laser beam fired from the wizard's merged ally crosses the whole screen, hitting several enemies.">
+        <figcaption>A merged ally spent at full ammo: the biggest beam the game has.</figcaption>
+      </figure>
+    </div>
+
+    <div class="decision">
+      <h3>Every shot is announced</h3>
+      <p><span class="lbl">Problem</span>Bullet hell asks the player to memorise walls of bullets. I wanted the challenge to come from reading enemies and making decisions.</p>
+      <p><span class="lbl">Decision</span>Before every shot, the enemy turns red and shakes, for about 0.4 seconds on a normal shot. A plasma shot charges for about 1.2 seconds while a blue ball grows on the enemy's nose. A laser shows a dashed aim line for about 0.75 seconds. Each bullet type has its own colour.</p>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Colour</th><th>Bullet</th><th>Behaviour</th></tr></thead>
+          <tbody>
+            <tr><td class="k">Green</td><td>Chaser</td><td>Homes in on the wizard for about 2.6 s, then flies straight.</td></tr>
+            <tr><td class="k">Red</td><td>Straight</td><td>Flies straight ahead.</td></tr>
+            <tr><td class="k">Blue</td><td>Plasma</td><td>Long charge-up, then a large, slower ball.</td></tr>
+            <tr><td class="k">Pink</td><td>Laser</td><td>An aim line shows where it will fire, then the beam.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><span class="lbl">Sprinters</span>A fast yellow arrow crosses the screen, with a warning one second before it arrives. Hitting it with an ally shot adds a bullet to every Drone and Spread shot, up to three. You can't know when one is coming, without allies you can't take it, and with allies you still have to aim, which is another reason the line-up button exists.</p>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Enemy behaviour is the level design</h2>
+    <p>Shoot 'em ups usually focus on tight controls, small hitboxes and patterns the player learns. Here the player catches enemies and decides live what to do with them, so the most important thing is how enemies behave. In that sense the game is closer to Pokémon or Pikmin than to a traditional shmup, with shmup logic and movement.</p>
+    <p>Each enemy flies in from the right, top, bottom or behind, then holds a position, follows a path, tracks the wizard's height, chases him, dives at him, or protects another enemy by staying between it and the wizard. An enemy can switch to a second behaviour when the wave thins out, and a whole wave can react to events: enrage, dive, retreat or call reinforcements.</p>
+    <p>The prototype's missions aren't a campaign. They're test subjects for the mechanics. Some finish in seconds, some take minutes, and I'm still adding new ones.</p>
+    <div class="scroll">
+      <table class="rooms">
+        <thead><tr><th>Mission</th><th>Enemies</th><th>What it tests</th></tr></thead>
+        <tbody>
+          <tr><td class="k">1 Tutorial</td><td>2 Drones</td><td>One circles, one weaves. The last one left starts chasing the wizard.</td></tr>
+          <tr><td class="k">2 Clear All Enemies</td><td>4 Drones, 1 Spread</td><td>The drones zigzag. With three enemies left they stop and protect the Spread. The same enemies become a new problem halfway through.</td></tr>
+          <tr><td class="k">3 Clear All Enemies II</td><td>3 Drones, 1 Spread</td><td>Two figure-8 drones switch to protecting the Spread when two enemies are left.</td></tr>
+          <tr><td class="k">4 Scan All Enemies Without Shooting Them</td><td>1 fast Drone</td><td>Three times normal speed. Shooting it wastes ammo, so you scan it.</td></tr>
+          <tr><td class="k">5 Zigzag Patrol</td><td>4 Drones, 1 Shield</td><td>The last enemy left dives at the wizard.</td></tr>
+          <tr><td class="k">6 Last Stand</td><td>Shield, 2 Spreads, Laser, Drone II</td><td>Behind a wall of blocks. When the Shield falls the rest are enraged, and three drones arrive when one enemy is left.</td></tr>
+          <tr><td class="k">7 Escape</td><td>1 Drone</td><td>Pillars scroll past fast. Fly through them to reach a drone that tracks your height, and scan it. Testing what happens when the player has cover.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <figure class="win">
+      <div class="win-bar"><span>Mission 7 — Escape</span><span>pillars</span></div>
+      <img src="img/cqw/12-escape-pillars.jpg" width="1200" height="675" alt="Mission 7: tall green pillars with gaps scroll across the screen between the wizard and a single drone.">
+      <figcaption>Mission 7's pillars. The idea works; the execution still needs work.</figcaption>
+    </figure>
+  </section>
+
+  <section class="block">
+    <h2>What playtesting showed</h2>
+    <p>So far I'm the only playtester, and I found a strategy I never designed. A player who loves one pair of allies can keep it:</p>
+    <ol>
+      <li>Use both allies until each has one shot left.</li>
+      <li>Let the wizard get hit on purpose and fall asleep.</li>
+      <li>Watch the allies betray him and fly back to their posts.</li>
+      <li>Survive the sleep phase.</li>
+      <li>Scan them again and recruit them with full ammo.</li>
+    </ol>
+    <p>It's very hard, but it works. It came from three systems working together: limited ammo, the sleep phase and betrayal.</p>
+  </section>
+
+  <section class="block">
+    <h2>What changed during development</h2>
+    <ul>
+      <li><b>Fixed formations were dropped.</b> The first waves came from sixteen fixed formations named after musical ideas, like chord, arpeggio and staccato. I used them until I could design each wave myself.</li>
+      <li><b>Betrayal became fairer.</b> Allies used to turn on the wizard instantly. Now they return to their posts and hold fire until they arrive.</li>
+      <li><b>The sleep phase got shorter</b>, from 10 to 6 seconds.</li>
+      <li><b>Every shot became readable.</b> Enemies now shake and turn red before they fire, and each bullet type has its own colour.</li>
+      <li><b>Enemy fusion became one-sided.</b> Only the enemy that seeks the fusion has to be weakened.</li>
+    </ul>
+  </section>
+
+  <section class="block">
+    <h2>The hidden story</h2>
+    <p>The wizard was looking for a quartz that grants all wishes, which he had read about in his magic books. He found it in a cave, stuck to a stick: the broom he rides. When he got close, the quartz activated, scanned him and hypnotised him. So the wizard is under hypnosis, and the quartz is the real player.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>In the game</th><th>In reality</th></tr></thead>
+        <tbody>
+          <tr><td>Enemies</td><td>Scared birds</td></tr>
+          <tr><td>Bullets</td><td>Rocks the birds throw</td></tr>
+          <tr><td>Scanning an enemy</td><td>The quartz hypnotises the bird too</td></tr>
+          <tr><td>The crystal cracks and the wizard sleeps</td><td>The hypnosis is released for a moment</td></tr>
+          <tr><td>Enemies fusing</td><td>Scared birds huddling together</td></tr>
+          <tr><td>A scanned fusion breaking apart</td><td>Confused birds forgetting what scared them</td></tr>
+          <tr><td>Allies merging</td><td>Hypnotised birds whose commands are synchronised</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>I want players to eventually ask one question, "why hypnosis?", and start forming theories, the same way FiveTen's medical clues do. At the end of the game the quartz breaks and the wizard sees reality, and finishing it unlocks a mode called Reality that shows what was really happening.</p>
+    <p>The story also helps the design. Because every enemy is an illusion, any enemy can appear and still make sense. If a dragon shows up, the wizard read books about dragons.</p>
+  </section>
+
+  <section class="block">
+    <h2>Numbers</h2>
+    <p>The values the current prototype ships with.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Value</th><th>Setting</th><th>What it means in play</th></tr></thead>
+        <tbody>
+          <tr><td>Wizard speed</td><td class="n">360 px/s</td><td>8 directions, anywhere on the 1200 × 675 screen.</td></tr>
+          <tr><td>Speed while scanning</td><td class="n">78%</td><td>Capturing slows you down.</td></tr>
+          <tr><td>Scan reach</td><td class="n">245 px, ±46 px</td><td>In front of the wizard, about his height. Blocks stop it.</td></tr>
+          <tr><td>Hearts</td><td class="n">5</td><td>1.1 s of invincibility after a hit.</td></tr>
+          <tr><td>Scanned enemy fire rate</td><td class="n">× 2.6</td><td>The target panics.</td></tr>
+          <tr><td>Low-health ease</td><td class="n">up to 65%</td><td>Less hypnosis needed as an enemy loses health.</td></tr>
+          <tr><td>Enemy fusion</td><td class="n">≤ 50% health</td><td>The weakened enemy seeks a partner.</td></tr>
+          <tr><td>Fusion meter</td><td class="n">≈ 6 s of scanning</td><td>Fills the ring that allows a merge.</td></tr>
+          <tr><td>Merge</td><td class="n">2.2 s at 35% speed</td><td>The cost of merging your allies.</td></tr>
+          <tr><td>Sleep phase</td><td class="n">6 s</td><td>First 1.2 s protected. Adjustable from 3 to 30 s.</td></tr>
+          <tr><td>Recovery</td><td class="n">0.8 s, then 2.2 s</td><td>Hearts return one at a time. A hit stops it.</td></tr>
+          <tr><td>Each loop</td><td class="n">+15% fire rate</td><td>After mission 7 the game loops and enemies shoot faster.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Scoring</th><th>Points</th></tr></thead>
+        <tbody>
+          <tr><td>Capture an enemy</td><td class="n">+250</td></tr>
+          <tr><td>Destroy an enemy</td><td class="n">+100</td></tr>
+          <tr><td>Destroy a fused enemy</td><td class="n">+400</td></tr>
+          <tr><td>Clear a mission</td><td class="n">+150</td></tr>
+          <tr><td>Destroy a sprinter</td><td class="n">+250</td></tr>
+          <tr><td>Ally bullet hit</td><td class="n">+35</td></tr>
+          <tr><td>Ally laser or ultimate hit</td><td class="n">+45</td></tr>
+          <tr><td>Take a key</td><td class="n">+50</td></tr>
+          <tr><td>Hit on a Shield's shield</td><td class="n">+20</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>What I learned</h2>
+
+    <div class="decision">
+      <h3>Enemy behaviour is the level design</h3>
+      <p>When the player is catching enemies, placement, behaviour and objectives matter more than bullet patterns.</p>
+    </div>
+
+    <div class="decision">
+      <h3>A coherent foundation creates freedom</h3>
+      <p>Linking hypnosis with illusion made the core mechanics explainable, and it means almost any new enemy can belong in the game.</p>
+      <blockquote class="quote">The ground of the game gives you the freedom.</blockquote>
+    </div>
+
+    <div class="decision">
+      <h3>Risk is what makes a reward feel good</h3>
+      <p>A capture only feels good because the player had to risk something to get it.</p>
+    </div>
+
+    <p>Planned for the full game: a campaign, bosses, leaderboards, the ending and Reality mode, gamepad support, audio, and final art.</p>
+  </section>
+
+  <nav class="next" aria-label="More projects">
+    <a class="btn ghost" href="#warpbound">← Warpbound</a>
+    <a class="btn" href="#fiveten">Next: FiveTen →</a>
+  </nav>
+</article>
+
+<!-- ============================== FIVETEN ============================== -->
+<article class="case" data-view="fiveten" id="fiveten" style="--hue:var(--ft)">
+  <a class="back" href="#work">← All work</a>
+
+  <header class="case-head">
+    <p class="tag">Arcade falling-block puzzle · Android · Live on Google Play</p>
+    <h1 tabindex="-1">FiveTen</h1>
+    <p class="pitch">An arcade puzzle game built on addition. Falling pieces carry numbers. Line up three blocks that add up to the target, and let the scanner clear them before the board fills.</p>
+    <dl class="spec">
+      <div><dt>Role</dt><dd>Game design, programming, UI, systems and release. Everything except the music and some sound effects.</dd></div>
+      <div><dt>Development</dt><dd>About five months, from the start of development to release</dd></div>
+      <div><dt>Platform</dt><dd>Android, touch. Keyboard and controller also supported.</dd></div>
+      <div><dt>Engine</dt><dd>Godot 4, GDScript, PlayFab leaderboard</dd></div>
+    </dl>
+    <div class="btns">
+      <a class="btn" href="https://play.google.com/store/apps/details?id=com.fivetenstudio.fiveten" target="_blank" rel="noopener">Get it on Google Play ↗</a>
+      <a class="btn ghost" href="docs/fiveten-gdd.html">Read the full GDD</a>
+    </div>
+  </header>
+
+  <div class="phones">
+    <figure class="phone"><img src="img/ft/menu.jpg" width="540" height="1194" alt="FiveTen main menu: the 5|10 logo above the buttons Road to 100, Leaderboard, Options, How to play, Credits and Quit, on a background grid of coloured numbers."><figcaption>The main menu, over a wall of numbers.</figcaption></figure>
+    <figure class="phone"><img src="img/ft/play-target-10.jpg" width="540" height="1194" alt="A game at target 10, 3 of 5: a falling 2 and 3 pair above rows of small numbers, with the red scanner line crossing the board."><figcaption>Target 10, third hit of five. The red line is the scanner.</figcaption></figure>
+    <figure class="phone"><img src="img/ft/play-vertical-scan.jpg" width="540" height="1194" alt="A game at target 20 with the green vertical scanner crossing the board and three blocks, 8, 5 and 7, outlined in green as a vertical match, under the word SINGLE!"><figcaption>Target 20: the green Vertical Scan sweeps the columns.</figcaption></figure>
+  </div>
+
+  <section class="block">
+    <h2>The idea</h2>
+    <p>FiveTen started with boredom in university classes. It made me think that almost any lesson could be turned into a game if enough creativity went into the problem. I also wanted to become a more technical game designer, so I picked a project small enough to learn an engine and go through the whole cycle, from first prototype to release.</p>
+    <p>The goal was simple: fun practice. Repeated arithmetic should feel like an arcade game, not an exercise. I didn't want a classic educational game with maths dropped into an existing structure. I wanted the maths to be the mechanic.</p>
+    <blockquote class="quote">Can mathematics become the foundation of a real arcade puzzle game?</blockquote>
+    <p>I chose addition because everyone uses it and it fits a falling-block structure. Multiplication makes numbers grow too fast and would have needed a different kind of game. The genre comes from games I love: Tetris for falling blocks, Puyo Puyo for connected pieces, Meteos for experimenting with the formula, and Lumines for clearing on a rhythm.</p>
+  </section>
+
+  <section class="block">
+    <h2>How it plays</h2>
+    <p>Each piece is two connected number blocks. The player moves, rotates and drops it onto a 10 × 17 board. Three horizontally adjacent blocks that add up to the current target make a match. A scanner sweeps the board, and when it reaches that row the match clears. Five matches raise the target by five. Completing target 100 wins the game, and a full board ends it.</p>
+    <figure class="win">
+      <div class="win-bar"><span>Example rows · target 10</span><span>10 × 17 board</span></div>
+      <div class="board">
+        <div class="row" aria-label="A row reading 7, 5, 4, 1, 3. The 5, 4 and 1 make a match.">
+          <span class="cell">7</span><span class="cell hit">5</span><span class="cell hit">4</span><span class="cell hit">1</span><span class="cell">3</span>
+          <span class="eq">5 + 4 + 1 = 10</span>
+        </div>
+        <div class="row" aria-label="A row reading 3, 6, 1, 7, 2. Two matches share the middle 1: a Stone Combo.">
+          <span class="cell hit">3</span><span class="cell hit">6</span><span class="cell shared">1</span><span class="cell hit">7</span><span class="cell hit">2</span>
+          <span class="eq">3 + 6 + 1 and 1 + 7 + 2: Stone Combo</span>
+        </div>
+      </div>
+      <figcaption>A normal match on top. Below, two matches share one block, which is the Stone Combo.</figcaption>
+    </figure>
+    <p>The targets climb from 10 to 100, five matches at each step.</p>
+    <p>The game teaches all of this in six short pages, each with a live demonstration on a small board.</p>
+    <div class="phones six">
+      <figure class="phone"><img src="img/ft/tut-1-goal.jpg" width="540" height="1194" alt="Tutorial page 1, Your goal: clear blocks that sum to the target, five times to advance, each new target five higher."><figcaption>1 · The goal</figcaption></figure>
+      <figure class="phone"><img src="img/ft/tut-2-align.jpg" width="540" height="1194" alt="Tutorial page 2, Align 3 blocks: 3, 3 and 4 in a row make 10 and are cleared by the scanner."><figcaption>2 · Align 3 blocks</figcaption></figure>
+      <figure class="phone"><img src="img/ft/tut-3-vertical-scan.jpg" width="540" height="1194" alt="Tutorial page 3, Vertical Scan: a green scanner sweeps left to right and clears a vertical 3, 3, 4."><figcaption>3 · Vertical Scan</figcaption></figure>
+      <figure class="phone"><img src="img/ft/tut-4-purge-strike.jpg" width="540" height="1194" alt="Tutorial page 4, Purge Strike: lightning strikes every 5 on a board crowded with fives."><figcaption>4 · Purge Strike</figcaption></figure>
+      <figure class="phone"><img src="img/ft/tut-5-controls.jpg" width="540" height="1194" alt="Tutorial page 5, Controls: double tap to rotate, swipe left or right to move, swipe down to soft drop, swipe up to hard drop."><figcaption>5 · Controls</figcaption></figure>
+      <figure class="phone"><img src="img/ft/tut-6-stone-combo.jpg" width="540" height="1194" alt="Tutorial page 6, Stone Combo: a row of 3, 3, 4, 2, 4 holds two matches that share the middle 4."><figcaption>6 · Stone Combo</figcaption></figure>
+    </div>
+    <ol class="ladder" aria-label="Targets from 10 to 100">
+      <li>10</li><li>15</li><li>20</li><li>25</li><li>30</li><li>35</li><li>40</li><li>45</li><li>50</li><li>55</li><li>60</li><li>65</li><li>70</li><li>75</li><li>80</li><li>85</li><li>90</li><li>95</li><li>100</li>
+    </ol>
+  </section>
+
+  <section class="block">
+    <h2>Design decisions</h2>
+
+    <div class="decision">
+      <h3>Three blocks per match, not two or four</h3>
+      <p><span class="lbl">Problem</span>The number of blocks in a match decides how deep each calculation is and how big the board has to be.</p>
+      <p><span class="lbl">Decision</span>Two blocks were too easy and gave no depth. I tested four, and the board had to grow so much that the game became awkward on small screens and the numbers got harder to read. Three sits in the middle, and players already know the shape from match-three games.</p>
+    </div>
+
+    <div class="decision">
+      <h3>Start at 10, stop at 100</h3>
+      <p><span class="lbl">Decision</span>Starting at 10 gives the game its identity: the target is ten, and you need five hits to move on. I considered 5, but it has too few practical three-number combinations, so the start felt cramped. I first planned to go up to 1000 and cut it to 100 to keep the game small. You can finish it in one sitting, and there is still enough climb to reward mastery.</p>
+      <p>The target is what gives each placement a purpose. It decides which calculation you want, whether to take the chance in front of you, how carefully to set up the fifth hit, and what to prepare for the next target.</p>
+    </div>
+
+    <div class="decision">
+      <h3>A scanner instead of instant clears</h3>
+      <p><span class="lbl">Problem</span>If matches cleared the moment they formed, players would think about nothing except building matches. Tracking combos would also have needed a separate countdown after every match.</p>
+      <p><span class="lbl">Decision</span>A scanner sweeps the board and clears a match only when it reaches that row. The loop changes from "make a match, it clears" to "make the calculation, wait, anticipate, act", so timing matters as much as arithmetic. Matches the scanner finds in a row count as a combo, so no extra timer is needed. The scanner starts at about 0.60 seconds per sweep, gets faster with every new target, and has a minimum speed.</p>
+      <p><span class="lbl">What playtesting showed</span>When I played with full focus I started building a "tower of calculations". I prepared several matches, waited for the scanner to restart, then placed pieces so they all cleared in the same sweep. I never designed that as a mechanic. It came out of the board, the scanner and the pieces working together, and clearing a sweep I had planned for was the most satisfying moment in the game.</p>
+      <blockquote class="quote">Small conditions can change player behaviour a lot without needing a new mechanic.</blockquote>
+    </div>
+
+    <div class="decision">
+      <h3>Make the player feel smart</h3>
+      <p><span class="lbl">Problem</span>A correct sum on its own just registers as a correct answer. I wanted it to feel like an achievement.</p>
+      <p><span class="lbl">Decision</span>Each successful calculation earns a compliment about intelligence, turning the old idea that people who are good at maths are clever into positive feedback.</p>
+      <ul class="facts praise" aria-label="Compliments the game gives">
+        <li>BRIGHT</li><li>SHARP</li><li>CLEVER</li><li>SMART</li><li>BRAINY</li><li>PERCEPTIVE</li><li>INSIGHTFUL</li><li>ASTUTE</li><li>BRILLIANT</li><li>GENIUS</li><li>MASTERMIND</li>
+      </ul>
+      <p>The compliment is the last of six layers of feedback. The calculation clears, the score goes up, the target progresses, combos open up, abilities charge, and then the game tells you how clever that was. A global leaderboard on PlayFab gives the score a context. It shows rank, country, name, score, highest target and time.</p>
+    </div>
+
+    <div class="decision">
+      <h3>Abilities are earned from the core loop</h3>
+      <p><span class="lbl">Problem</span>Extra mechanics easily turn into a second game the player has to learn.</p>
+      <p><span class="lbl">Decision</span>Both abilities are charged by combos, so playing the core game well is what unlocks them.</p>
+      <ol class="ladder loop" aria-label="The ability loop">
+        <li>Good decisions</li><li>Combos</li><li>Abilities</li><li>More options</li><li>Better decisions</li>
+      </ol>
+      <p><b>Vertical Scan</b>, charged by a two-match combo. Players kept building correct vertical arrangements, and a horizontal-only game felt more restrictive than it needed to be. Vertical Scan sends a second scanner down the columns, which gives the player more ways to solve the board.</p>
+      <p><b>Purge Strike</b>, charged by a three-match combo. In playtesting, players kept forcing one familiar formula. At target 10 they would wait for 5 + 4 + 1, the generator wouldn't deal those exact numbers, and the board filled with leftovers. Purge Strike removes the most common number on the board. That gets the player out of trouble and pushes them to look for other sums, so one bad habit isn't instantly fatal.</p>
+      <div class="phones">
+        <figure class="phone"><img src="img/ft/tut-4-purge-ready.jpg" width="540" height="1194" alt="Tutorial board crowded with the number 5, with the bar Purge Strike ready below it."><figcaption>The forced-formula problem: a board full of fives, and Purge Strike ready.</figcaption></figure>
+        <figure class="phone"><img src="img/ft/play-purge-strike.jpg" width="540" height="1194" alt="A game at target 25: a blue lightning bolt strikes from the Purge Strike button across the board while one number is cleared everywhere."><figcaption>Purge Strike in a real game at target 25.</figcaption></figure>
+      </div>
+      <p>The number generator works from the current target, so useful calculations stay possible without the answer becoming predictable, and it avoids dealing the same pair over and over.</p>
+    </div>
+
+    <div class="decision">
+      <h3>The Stone Combo was found, not planned</h3>
+      <p><span class="lbl">What happened</span>While experimenting I noticed that two groups of three can share exactly one middle block. That makes a five-block row holding two valid calculations, like the second row in the example above.</p>
+      <p><span class="lbl">Decision</span>In the game's own words, a Stone Combo is two matches cleared in the same scan that share a block or sit in adjacent columns. I made it a named move worth 60 points, more than twice a normal match. The name comes from killing two birds with one stone. It does more with less board space, and it is my favourite mechanic in the game because it is the cleanest form of mastery FiveTen has.</p>
+      <div class="phones">
+        <figure class="phone"><img src="img/ft/tut-6-stone-clear.jpg" width="540" height="1194" alt="Tutorial board: the scanner passes through a row of 3, 3, 4, 2, 4, clearing two touching matches at once, with the label Two touching matches in one scan."><figcaption>3 + 3 + 4 and 4 + 2 + 4 share the middle 4, and one scan clears both.</figcaption></figure>
+      </div>
+    </div>
+
+    <div class="decision">
+      <h3>Controls built for a thumb</h3>
+      <p><span class="lbl">Decision</span>FiveTen was designed for touch first. Rotation is a double tap because an accidental rotation hurts more than any other input mistake. Swipes have thresholds and a dead zone for diagonals, holding a direction uses delayed auto-shift, and a hard drop is told apart from a normal soft drop.</p>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Touch</th><th>Action</th><th>Keyboard / controller</th></tr></thead>
+          <tbody>
+            <tr><td class="k">Horizontal swipe</td><td>Move left or right, repeating with delayed auto-shift</td><td>Left / Right</td></tr>
+            <tr><td class="k">Swipe down</td><td>Soft drop</td><td>Down</td></tr>
+            <tr><td class="k">Swipe up</td><td>Hard drop</td><td>Up</td></tr>
+            <tr><td class="k">Double tap</td><td>Rotate</td><td>Accept</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>The hidden story</h2>
+    <p>The game looks strangely medical, and that's on purpose. FiveTen is secretly a defibrillator scene. The board is a patient and the player is trying to save its life. The scanner works like a medical scan, Vertical Scan uses a heartbeat line, and Purge Strike is the paddles.</p>
+    <p>I never explain it. Players notice the clues, wonder why a puzzle game looks like a hospital machine, and build their own theory. When they win, the board thanks them for saving its life and flies away to see its family. The ending is light and unexpected, and it makes the whole visual language make sense at once.</p>
+  </section>
+
+  <section class="block">
+    <h2>Numbers</h2>
+    <p>The values the released game ships with.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Value</th><th>Setting</th><th>What it means in play</th></tr></thead>
+        <tbody>
+          <tr><td>Board</td><td class="n">10 × 17</td><td>Sized so the numbers stay readable on a phone.</td></tr>
+          <tr><td>Match</td><td class="n">3 blocks</td><td>Horizontally adjacent, summing to the target.</td></tr>
+          <tr><td>Targets</td><td class="n">10 → 100, +5</td><td>Five matches per target.</td></tr>
+          <tr><td>Scanner</td><td class="n">0.60 s, × 0.92</td><td>Per sweep at the start, then faster with each new target, down to about 0.15.</td></tr>
+          <tr><td>Vertical Scan</td><td class="n">2-match combo</td><td>Charges the column scanner.</td></tr>
+          <tr><td>Purge Strike</td><td class="n">3-match combo</td><td>Removes the most common number on the board.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Scoring</th><th>Points</th></tr></thead>
+        <tbody>
+          <tr><td>Soft drop</td><td class="n">+1 per step</td></tr>
+          <tr><td>Hard drop</td><td class="n">up to +20, by distance</td></tr>
+          <tr><td>Normal match</td><td class="n">+25</td></tr>
+          <tr><td>Stone Combo</td><td class="n">+60</td></tr>
+          <tr><td>Combo</td><td class="n">+50 base, +10% per level after the base</td></tr>
+          <tr><td>Target completed</td><td class="n">target × 50</td></tr>
+          <tr><td>Time bonus, end of run</td><td class="n">seconds played × 10</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>What I learned</h2>
+
+    <div class="decision">
+      <h3>Scope is a design skill</h3>
+      <p>The danger was never a lack of ideas. It was losing control of the scope. Every idea had to pass four questions: does it support the core, does it add a meaningful experience, does it fit the scope, and does removing it damage the game?</p>
+      <blockquote class="quote">Good game design is not about having ideas. It is about having the ability to remove and add ideas without damaging the core experience.</blockquote>
+    </div>
+
+    <div class="decision">
+      <h3>Watch what players do, not what you expect</h3>
+      <p>The Stone Combo and the tower of calculations, two of the strongest things in FiveTen, came from playing the game, not from the plan.</p>
+    </div>
+
+    <div class="decision">
+      <h3>Depth doesn't need complexity</h3>
+      <p>The scanner is a simple rule. Combined with falling pieces, targets, anticipation and combos, it creates a deep space of decisions. The abilities work for the same reason: they give the player new ways to use the same calculation, not a new game to learn.</p>
+      <p>Sometimes the strongest design is the smallest set of rules that produces the most interesting player behaviour.</p>
+    </div>
+  </section>
+
+  <nav class="next" aria-label="More projects">
+    <a class="btn ghost" href="#clear-quartz-wizard">← Clear Quartz Wizard</a>
+    <a class="btn" href="#about">About me →</a>
+  </nav>
+</article>
+
+<!-- ============================== ABOUT ============================== -->
+<section class="about" data-view="about" id="about">
+  <div class="about-main">
+    <p class="tag" style="--hue:var(--ink-2)">About</p>
+    <h1 tabindex="-1">Hi, I'm Abdessamed. I design games.</h1>
+    <p>I'm Mohammed Abdessamed Nouioua, "Abdou" or "Samet" for short, a game designer based in Istanbul. I've designed and built three games: FiveTen, an arcade number puzzle released on Google Play, and two playable browser demos, the metroidvania Warpbound and the shoot 'em up Clear Quartz Wizard.</p>
+    <p>Each one started from a single question. Can mathematics be the core of an arcade game? Can a shoot 'em up work if you can't shoot? How much freedom can a player have before the level design stops mattering? Then I look for the smallest set of rules that answers it.</p>
+    <p>I give every power a limit, I cut ideas that don't serve the core, and I watch what players actually do. Some of my favourite mechanics, like FiveTen's Stone Combo, came from playing, not from the plan. To test ideas fast, I build my own tools, like the level and wave editors behind Warpbound.</p>
+    <p>I'm looking for a game design role at a studio, and I'm open to working anywhere.</p>
+    <div class="btns">
+      <a class="btn" href="#work">See my work</a>
+      <a class="btn ghost" href="mailto:abdounouioua46@gmail.com">Email me</a>
+    </div>
+  </div>
+  <aside class="about-side">
+    <div>
+      <h2>What I do</h2>
+      <ul class="plain">
+        <li>Mechanics and systems design</li>
+        <li>Level design</li>
+        <li>Tuning and balance</li>
+        <li>Game design documents</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Contact</h2>
+      <ul class="plain">
+        <li><a href="mailto:abdounouioua46@gmail.com">abdounouioua46@gmail.com</a></li>
+        <li>Istanbul, Türkiye · open to work anywhere</li>
+      </ul>
+    </div>
+  </aside>
+</section>
+
+</main>
+
+<footer class="foot">
+  <span>Mohammed Abdessamed Nouioua · Game designer · currently in Istanbul</span>
+  <span>October 2026</span>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var views=[].slice.call(document.querySelectorAll('[data-view]'));
+  var names=views.map(function(v){return v.dataset.view;});
+  var current=null;
+  var BUILDS=window.GAME_BUILDS||{};
+  var local=location.protocol==='file:';      /* opened straight from a folder: the browser won't let the page read other files */
+
+  /* ---------- game builds: point every link at the file named in GAME_BUILDS, and show its build number ---------- */
+  Object.keys(BUILDS).forEach(function(slot){
+    var url=BUILDS[slot];
+    [].forEach.call(document.querySelectorAll('[data-build-link="'+slot+'"]'),function(a){ a.href=url; });
+    if(local) return;
+    fetch(url).then(function(r){ if(!r.ok) throw new Error(r.status); return r.text(); }).then(function(t){
+      var m=/"build"\s*:\s*"([^"]+)"/.exec(t)||/<title>[^<]*\u2014\s*([^<]+)<\/title>/.exec(t);
+      if(!m) return;
+      [].forEach.call(document.querySelectorAll('[data-build-id="'+slot+'"]'),function(el){ el.textContent=m[1].trim(); });
+    }).catch(function(){});
+  });
+
+  /* ---------- in-page player: the game is its own page, loaded into a frame on request ---------- */
+  function stop(fig){
+    var f=fig.querySelector('iframe'); if(f) f.remove();
+    if(fig._timer){ clearTimeout(fig._timer); fig._timer=null; }
+    fig.querySelector('.stage img').hidden=false;
+    fig.querySelector('.stage .btn').hidden=false;
+    fig.querySelector('.stop').hidden=true;
+    fig.querySelector('.player-msg').hidden=true;
+  }
+  function stopAll(){ [].forEach.call(document.querySelectorAll('.player'),stop); }
+  function play(fig){
+    if(fig.querySelector('iframe')) return;
+    var url=BUILDS[fig.dataset.slot], stage=fig.querySelector('.stage');
+    if(!url) return;
+    var frame=document.createElement('iframe'), phase='src';
+    frame.title=fig.dataset.title+' (playable game)';
+    frame.setAttribute('allow','fullscreen');
+    frame.setAttribute('allowfullscreen','');
+    function running(){ try{ var d=frame.contentDocument; return !!(d&&d.querySelector('canvas')); }catch(e){ return false; } }
+    function verify(){
+      if(!frame.isConnected||phase==='done'||phase==='fetching') return;
+      if(local){ phase='done'; return; }
+      if(running()){ phase='done'; try{ frame.focus(); }catch(e){} return; }
+      if(phase==='src'){
+        /* the frame didn't come up from its URL: load the same file's text into it instead */
+        phase='fetching';
+        fetch(url).then(function(r){ if(!r.ok) throw new Error(r.status); return r.text(); })
+          .then(function(t){ if(!frame.isConnected) return; phase='srcdoc'; frame.removeAttribute('src'); frame.srcdoc=t; fig._timer=setTimeout(verify,3500); })
+          .catch(function(){ phase='done'; fig.querySelector('.player-msg').hidden=false; });
+      } else { phase='done'; fig.querySelector('.player-msg').hidden=false; }
+    }
+    frame.addEventListener('load',function(){ clearTimeout(fig._timer); fig._timer=setTimeout(verify,600); });
+    fig._timer=setTimeout(verify,4000);
+    frame.src=url;
+    fig.querySelector('.stage img').hidden=true;
+    fig.querySelector('.stage .btn').hidden=true;
+    fig.querySelector('.stop').hidden=false;
+    stage.appendChild(frame);
+  }
+  [].forEach.call(document.querySelectorAll('.player'),function(fig){
+    fig.querySelector('.stage .btn').addEventListener('click',function(){ play(fig); });
+    fig.querySelector('.stop').addEventListener('click',function(){ stop(fig); });
+  });
+
+  /* ---------- views: one is shown at a time, picked by the #anchor ---------- */
+  function show(hash,opts){
+    var name=names.indexOf(hash)>=0?hash:'home';
+    var changed=name!==current;
+    if(changed){
+      stopAll();
+      views.forEach(function(v){ v.hidden=v.dataset.view!==name; });
+      [].forEach.call(document.querySelectorAll('[data-nav]'),function(a){
+        if(a.dataset.nav===name) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current');
+      });
+      current=name;
+    }
+    var view=views[names.indexOf(name)];
+    if(opts&&opts.play){
+      var fig=view.querySelector('.player');
+      if(fig){ play(fig); fig.scrollIntoView({block:'center'}); return; }
+    }
+    if(hash==='work'){ var w=document.getElementById('work'); if(w) w.scrollIntoView(); }
+    else if(changed||(opts&&opts.click)) window.scrollTo(0,0);
+  }
+  document.addEventListener('click',function(e){
+    var a=e.target.closest&&e.target.closest('a[href^="#"]'); if(!a) return;
+    var hash=a.getAttribute('href').slice(1);
+    e.preventDefault();
+    try{ history.pushState(null,'','#'+hash); }catch(err){ try{ location.hash=hash; }catch(err2){} }
+    show(hash,{click:true,play:a.hasAttribute('data-play')});
+  });
+  function fromLocation(){ show((location.hash||'').slice(1)); }
+  window.addEventListener('popstate',fromLocation);
+  window.addEventListener('hashchange',fromLocation);
+  fromLocation();
+})();
+</script>
+</body>
+</html>

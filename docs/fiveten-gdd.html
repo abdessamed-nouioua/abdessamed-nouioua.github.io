@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Game design document for FiveTen, an arcade falling-block puzzle built on addition.">
+<title>FiveTen Game Design Document</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Martian+Mono:wght@400;500&display=swap">
+<style>
+
+/* Layout: a level-editor sheet. The page sits on a 32px tile grid (Warpbound's tile size),
+   every edge is square like a tile, screenshots sit in editor-window frames, and each
+   project carries one hue taken from its own game. */
+:root{
+  --paper:#eff1f5; --panel:#ffffff; --ink:#151a2d; --ink-2:#4c5370; --line:#cbd1de;
+  --grid:rgba(21,26,45,.055);
+  --accent:#2747d9; --on-accent:#ffffff;
+  --strip:#151a2d; --strip-fg:#eff1f5;
+  --wb:#b4560f; --cqw:#5a3ed0; --ft:#0a7a5c;
+  --note:#8a5a00; --note-bg:#fff5d9;
+  --display:"Bricolage Grotesque","Arial Narrow",system-ui,sans-serif;
+  --body:"Hanken Grotesk","Segoe UI",system-ui,sans-serif;
+  --mono:"Martian Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --tile:32px;
+  --hue:var(--accent);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0d101b; --panel:#151927; --ink:#e8ebf4; --ink-2:#9ba3bd; --line:#2a3046;
+    --grid:rgba(232,235,244,.04);
+    --accent:#8aa2ff; --on-accent:#0d101b;
+    --strip:#232a40; --strip-fg:#e8ebf4;
+    --wb:#f0a25a; --cqw:#b5a3ff; --ft:#5ad6ae;
+    --note:#f0c060; --note-bg:#2a2412;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0d101b; --panel:#151927; --ink:#e8ebf4; --ink-2:#9ba3bd; --line:#2a3046;
+  --grid:rgba(232,235,244,.04);
+  --accent:#8aa2ff; --on-accent:#0d101b;
+  --strip:#232a40; --strip-fg:#e8ebf4;
+  --wb:#f0a25a; --cqw:#b5a3ff; --ft:#5ad6ae;
+  --note:#f0c060; --note-bg:#2a2412;
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0; background-color:var(--paper); color:var(--ink);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:var(--tile) var(--tile);
+  font:400 17px/1.6 var(--body); -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1120px; margin-inline:auto; padding-inline:20px; padding-block:0 64px}
+a{color:var(--accent); text-underline-offset:.18em}
+a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+h1,h2,h3{font-family:var(--display); text-wrap:balance; margin:0; letter-spacing:-.02em}
+p{margin:0}
+img{display:block; max-width:100%; height:auto}
+[hidden]{display:none!important}
+
+/* ---------- top bar ---------- */
+.top{display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:8px 24px; padding-block:22px; border-bottom:1px solid var(--line)}
+.mark{font:700 1.25rem/1 var(--display); color:var(--ink); text-decoration:none; letter-spacing:-.02em}
+.mark small{font:400 .66rem/1 var(--mono); color:var(--ink-2); letter-spacing:.06em; text-transform:uppercase; margin-left:10px}
+.nav{display:flex; gap:22px}
+.nav a{font:500 .72rem/1 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--ink-2); text-decoration:none; padding-block:6px; border-bottom:2px solid transparent}
+.nav a:hover{color:var(--ink)}
+.nav a[aria-current="page"]{color:var(--ink); border-bottom-color:var(--ink)}
+
+
+:root{--hue:var(--ft)}
+.doc{max-width:760px; padding-block:28px 0; display:grid; gap:0}
+.back{font:500 .7rem/1 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--ink-2); text-decoration:none; justify-self:start; margin-bottom:22px}
+.back:hover{color:var(--ink)}
+.eyebrow{display:flex; align-items:center; gap:10px; font:500 .7rem/1.4 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--hue); margin-bottom:12px}
+.eyebrow::before{content:""; width:10px; height:10px; background:var(--hue)}
+.doc>h1:first-of-type{font-size:clamp(2.2rem,6vw,3.6rem); font-weight:800; line-height:1; letter-spacing:-.035em; border:0; padding:0; margin:0 0 18px}
+.toc{border:1px solid var(--line); background:var(--panel); margin:8px 0 18px}
+.toc summary{cursor:pointer; padding:12px 14px; font:500 .7rem/1 var(--mono); text-transform:uppercase; letter-spacing:.08em}
+.toc ul{margin:0; padding:4px 14px 14px 32px; columns:2 240px; column-gap:28px; font-size:.9rem}
+.toc li{break-inside:avoid; padding-block:2px}
+.toc ul ul{display:none}
+.doc h1{font-size:1.6rem; font-weight:750; line-height:1.15; margin:40px 0 14px; padding-top:16px; border-top:1px solid var(--ink)}
+.doc h2{font-size:1.2rem; font-weight:700; margin:26px 0 10px}
+.doc h3{font:500 .72rem/1.3 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--hue); margin:22px 0 8px}
+.doc p{margin:0 0 12px; max-width:66ch}
+.doc ul,.doc ol{margin:0 0 14px; padding-left:1.25em; max-width:66ch}
+.doc li+li{margin-top:4px}
+.doc hr{display:none}
+.doc strong{font-weight:600}
+.doc blockquote{margin:6px 0 16px; padding:2px 0 2px 16px; border-left:3px solid var(--hue); font:600 1.15rem/1.4 var(--display)}
+.doc blockquote p{margin:0}
+.doc table{border-collapse:collapse; width:100%; font-size:.92rem; background:var(--panel); border:1px solid var(--line); margin:4px 0 16px}
+.doc th{font:500 .62rem/1.3 var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--ink-2); text-align:left; padding:10px 14px}
+.doc td{padding:10px 14px; border-top:1px solid var(--line)}
+.doc td.num{font-family:var(--mono); font-size:.8rem; color:var(--hue); white-space:nowrap}
+.tablewrap{overflow-x:auto}
+.foot{margin-top:72px; padding-top:18px; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px 24px; font:400 .66rem/1.5 var(--mono); letter-spacing:.04em; color:var(--ink-2)}
+.foot a{color:inherit}
+</style>
+</head>
+<body>
+<div class="wrap">
+<main class="doc">
+<a class="back" href="../index.html#fiveten">← FiveTen case study</a>
+<p class="eyebrow">Game design document</p>
+<h1 id="fiveten-game-design-document">FiveTen — Game Design Document</h1>
+<p><strong>Project:</strong> FiveTen<br />
+<strong>Genre:</strong> Arcade Falling-Block Puzzle<br />
+<strong>Platform:</strong> Android / Mobile<br />
+<strong>Engine:</strong> Godot<br />
+<strong>Status:</strong> Released<br />
+<strong>Primary Goal:</strong> Fun practice</p>
+<hr />
+<details class="toc"><summary>Contents · 46 sections</summary>
+<ul>
+<li><a href="#1-document-purpose">1. Document Purpose</a></li>
+<li><a href="#2-game-overview">2. Game Overview</a></li>
+<li><a href="#3-design-pillars">3. Design Pillars</a></li>
+<li><a href="#4-target-audience">4. Target Audience</a></li>
+<li><a href="#5-design-problem">5. Design Problem</a></li>
+<li><a href="#6-inspirations-and-positioning">6. Inspirations and Positioning</a></li>
+<li><a href="#7-core-gameplay-loop">7. Core Gameplay Loop</a></li>
+<li><a href="#8-core-rules-and-objective">8. Core Rules and Objective</a></li>
+<li><a href="#9-board">9. Board</a></li>
+<li><a href="#10-falling-pieces">10. Falling Pieces</a></li>
+<li><a href="#11-why-three-blocks">11. Why Three Blocks?</a></li>
+<li><a href="#12-target-system">12. Target System</a></li>
+<li><a href="#13-why-start-at-10">13. Why Start at 10?</a></li>
+<li><a href="#14-why-stop-at-100">14. Why Stop at 100?</a></li>
+<li><a href="#15-scanner-system">15. Scanner System</a></li>
+<li><a href="#16-scanner-speed-and-progression">16. Scanner Speed and Progression</a></li>
+<li><a href="#17-emergent-scanner-strategy">17. Emergent Scanner Strategy</a></li>
+<li><a href="#18-combo-system">18. Combo System</a></li>
+<li><a href="#19-reward-feedback">19. Reward Feedback</a></li>
+<li><a href="#20-stone-combo">20. Stone Combo</a></li>
+<li><a href="#21-vertical-scan">21. Vertical Scan</a></li>
+<li><a href="#22-purge-strike">22. Purge Strike</a></li>
+<li><a href="#23-ability-philosophy">23. Ability Philosophy</a></li>
+<li><a href="#24-next-piece-preview">24. Next Piece Preview</a></li>
+<li><a href="#25-mobile-controls">25. Mobile Controls</a></li>
+<li><a href="#26-keyboard-controller-controls">26. Keyboard / Controller Controls</a></li>
+<li><a href="#27-scoring">27. Scoring</a></li>
+<li><a href="#28-leaderboard">28. Leaderboard</a></li>
+<li><a href="#29-difficulty-and-progression">29. Difficulty and Progression</a></li>
+<li><a href="#30-visual-direction">30. Visual Direction</a></li>
+<li><a href="#31-hidden-narrative-and-medical-metaphor">31. Hidden Narrative and Medical Metaphor</a></li>
+<li><a href="#32-victory-narrative">32. Victory Narrative</a></li>
+<li><a href="#33-audio-direction">33. Audio Direction</a></li>
+<li><a href="#34-game-flow">34. Game Flow</a></li>
+<li><a href="#35-tutorial-philosophy">35. Tutorial Philosophy</a></li>
+<li><a href="#36-educational-value">36. Educational Value</a></li>
+<li><a href="#37-edtech-edition-concept">37. EdTech Edition Concept</a></li>
+<li><a href="#38-technical-direction">38. Technical Direction</a></li>
+<li><a href="#39-performance-requirements">39. Performance Requirements</a></li>
+<li><a href="#40-monetization">40. Monetization</a></li>
+<li><a href="#41-mvp-scope">41. MVP Scope</a></li>
+<li><a href="#42-scope-management">42. Scope Management</a></li>
+<li><a href="#43-what-fiveten-should-never-become">43. What FiveTen Should Never Become</a></li>
+<li><a href="#44-design-philosophy">44. Design Philosophy</a></li>
+<li><a href="#45-portfolio-value">45. Portfolio Value</a></li>
+<li><a href="#46-final-design-summary">46. Final Design Summary</a></li>
+</ul>
+</details>
+<h1 id="1-document-purpose">1. Document Purpose</h1>
+<p>This document defines the design, gameplay systems, presentation, progression, and intended player experience of FiveTen.</p>
+<p>FiveTen is an arcade puzzle game built around addition. The player places falling number pieces and creates groups of three adjacent blocks whose values equal the current target.</p>
+<p>The game is designed to be immediately understandable while gaining depth through planning, timing, calculation, and mastery.</p>
+<hr />
+<h1 id="2-game-overview">2. Game Overview</h1>
+<p>FiveTen is a falling-block puzzle game in which the player combines three adjacent numbers to reach a target.</p>
+<p>The initial target is <strong>10</strong>. The player must successfully complete the target <strong>five times</strong> to advance to the next target.</p>
+<p>The target increases by <strong>5</strong> each time:</p>
+<p>10 → 15 → 20 → 25 → ... → 100</p>
+<p>Reaching and completing target <strong>100</strong> results in victory.</p>
+<p>The game ends when the board becomes full enough that new pieces can no longer be placed.</p>
+<p>The game is primarily an arcade experience. Its mathematical value is secondary to the gameplay.</p>
+<hr />
+<h1 id="3-design-pillars">3. Design Pillars</h1>
+<h2 id="31-challenge">3.1 Challenge</h2>
+<p>The player must calculate, plan, react, and manage board space under increasing pressure.</p>
+<h2 id="32-flexibility">3.2 Flexibility</h2>
+<p>There should be multiple possible calculations and multiple ways to approach a target. The player should be encouraged to look beyond one familiar formula.</p>
+<h2 id="33-reward">3.3 Reward</h2>
+<p>Successful decisions should feel meaningful through visual feedback, scoring, combos, special abilities, target progression, sound, and positive reinforcement.</p>
+<hr />
+<h1 id="4-target-audience">4. Target Audience</h1>
+<p>FiveTen is intended for anyone capable of basic addition.</p>
+<p>The game can also provide incidental educational value by encouraging players to:</p>
+<ul>
+<li>perform addition repeatedly</li>
+<li>recognize number combinations</li>
+<li>calculate faster</li>
+<li>develop familiarity with number composition</li>
+<li>make simple calculations more intuitive rather than consciously effortful</li>
+</ul>
+<p>The game should not become a conventional mathematics teaching tool. Its identity is primarily an arcade puzzle game.</p>
+<hr />
+<h1 id="5-design-problem">5. Design Problem</h1>
+<p>The central design question was:</p>
+<blockquote>
+<p>Can mathematics become the foundation of a real arcade puzzle game?</p>
+</blockquote>
+<p>Addition was selected because it is accessible, common in daily life, and easy to understand.</p>
+<p>Other operations were considered less appropriate for the original concept. Multiplication, for example, can make numbers grow rapidly and would push the game toward a different type of puzzle design.</p>
+<hr />
+<h1 id="6-inspirations-and-positioning">6. Inspirations and Positioning</h1>
+<p>FiveTen draws inspiration from falling-block puzzle games.</p>
+<p>Important inspirations include:</p>
+<ul>
+<li><strong>Tetris</strong> — falling-block structure</li>
+<li><strong>Puyo Puyo</strong> — connected/paired pieces</li>
+<li><strong>Meteos</strong> — falling puzzle-game experimentation</li>
+<li><strong>Lumines</strong> — scanning/clearing rhythm</li>
+</ul>
+<p>FiveTen is intended to feel like a celebration of the falling-block puzzle genre while giving it a mathematical identity.</p>
+<hr />
+<h1 id="7-core-gameplay-loop">7. Core Gameplay Loop</h1>
+<h3 id="high-level-loop">High-level loop</h3>
+<ol>
+<li>Receive a falling number piece.</li>
+<li>Move and rotate it.</li>
+<li>Place it on the board.</li>
+<li>Build groups of three numbers.</li>
+<li>Match groups whose sum equals the current target.</li>
+<li>Wait for the scanner to detect valid groups.</li>
+<li>Clear successful groups.</li>
+<li>Build combos and charge abilities.</li>
+<li>Complete the current target five times.</li>
+<li>Increase the target by five.</li>
+<li>Continue until target 100 is completed.</li>
+</ol>
+<h3 id="low-level-loop">Low-level loop</h3>
+<p>At the moment-to-moment level, the player constantly decides:</p>
+<ul>
+<li>Which calculation should I build?</li>
+<li>Should I use this piece now or prepare for a future piece?</li>
+<li>Should I create one match or multiple matches?</li>
+<li>Should I protect a potential Stone Combo?</li>
+<li>Should I wait for the scanner?</li>
+<li>Should I prepare for the next target?</li>
+<li>Should I use a charged ability?</li>
+</ul>
+<hr />
+<h1 id="8-core-rules-and-objective">8. Core Rules and Objective</h1>
+<p>A valid standard match consists of:</p>
+<p><strong>Three horizontally adjacent blocks whose values add up to the current target.</strong></p>
+<p>Example:</p>
+<p>5 + 4 + 1 = 10</p>
+<p>When the scanner reaches the row containing the valid group, the group is cleared.</p>
+<p>The player must complete the target five times before the target increases.</p>
+<hr />
+<h1 id="9-board">9. Board</h1>
+<p>The standard board is:</p>
+<ul>
+<li><strong>10 columns</strong></li>
+<li><strong>17 rows</strong></li>
+<li>Cell-based placement</li>
+<li>Falling paired number pieces</li>
+</ul>
+<p>The board must remain readable on mobile devices.</p>
+<p>Readability is a major design constraint because the numbers are the most important information on screen.</p>
+<hr />
+<h1 id="10-falling-pieces">10. Falling Pieces</h1>
+<p>Pieces consist of two connected number blocks.</p>
+<p>The player can:</p>
+<ul>
+<li>move left</li>
+<li>move right</li>
+<li>soft drop</li>
+<li>hard drop</li>
+<li>rotate</li>
+</ul>
+<p>Number generation is adapted around the current target so that useful calculations remain possible without making the solution completely predictable.</p>
+<p>The system also avoids repeatedly producing exactly the same pair.</p>
+<hr />
+<h1 id="11-why-three-blocks">11. Why Three Blocks?</h1>
+<p>Three blocks were chosen as the central calculation unit.</p>
+<p>Two blocks were considered too easy and would reduce the strategic requirement.</p>
+<p>Four blocks were tested and created problems:</p>
+<ul>
+<li>calculations became more cumbersome</li>
+<li>the board needed to become larger</li>
+<li>UI readability suffered</li>
+<li>smaller mobile screens became inconvenient</li>
+</ul>
+<p>Three blocks also benefit from the player's existing familiarity with match-three structures.</p>
+<hr />
+<h1 id="12-target-system">12. Target System</h1>
+<p>The target is the primary objective and the driving force of the game.</p>
+<p>The game begins at:</p>
+<p><strong>Target 10</strong></p>
+<p>The player must achieve five successful target matches.</p>
+<p>After five hits:</p>
+<p><strong>Target +5</strong></p>
+<p>The progression continues until:</p>
+<p><strong>Target 100</strong></p>
+<p>Target 100 is the victory condition.</p>
+<hr />
+<h1 id="13-why-start-at-10">13. Why Start at 10?</h1>
+<p>The starting target was influenced by the name FiveTen and the five-hit structure.</p>
+<p>Target 5 was considered too restrictive because it has fewer practical three-number compositions.</p>
+<p>Target 10 provides enough combinations to create meaningful decisions while remaining accessible.</p>
+<hr />
+<h1 id="14-why-stop-at-100">14. Why Stop at 100?</h1>
+<p>The original concept considered going as high as 1000.</p>
+<p>The maximum was reduced to 100 because the project needed to remain small and focused.</p>
+<p>The intended experience is a compact arcade game that can be completed in a sitting while still providing enough progression and challenge for mastery.</p>
+<hr />
+<h1 id="15-scanner-system">15. Scanner System</h1>
+<p>The scanner is a central part of FiveTen's identity.</p>
+<p>Instead of clearing a valid match immediately, the horizontal scanner moves through the board and detects valid groups when it reaches their row.</p>
+<p>This creates:</p>
+<ul>
+<li>anticipation</li>
+<li>timing decisions</li>
+<li>strategic setup</li>
+<li>combo opportunities</li>
+<li>a rhythm to gameplay</li>
+</ul>
+<p>The scanner also makes combo detection natural without requiring a conventional countdown timer after every match.</p>
+<hr />
+<h1 id="16-scanner-speed-and-progression">16. Scanner Speed and Progression</h1>
+<p>The horizontal scanner begins at approximately:</p>
+<p><strong>0.60 seconds per scan cycle</strong></p>
+<p>After each target advancement, its speed is multiplied by:</p>
+<p><strong>0.92</strong></p>
+<p>The speed has a minimum of approximately:</p>
+<p><strong>0.15</strong></p>
+<p>This creates increasing pressure as the player progresses.</p>
+<hr />
+<h1 id="17-emergent-scanner-strategy">17. Emergent Scanner Strategy</h1>
+<p>Playtesting revealed behavior that was not explicitly designed as a separate mechanic.</p>
+<p>A player can build a "tower of calculations," wait for the scanner to restart, and then place pieces that create several successful calculations in the same scanning cycle.</p>
+<p>This produces a strong feeling of anticipation and payoff.</p>
+<p>The important design lesson was:</p>
+<blockquote>
+<p>Small conditions can dramatically change player behavior without requiring an entirely new mechanic.</p>
+</blockquote>
+<hr />
+<h1 id="18-combo-system">18. Combo System</h1>
+<p>Combos are created when multiple valid matches are detected in a sequence.</p>
+<p>Combo performance can provide:</p>
+<ul>
+<li>additional score</li>
+<li>positive feedback</li>
+<li>bonus pieces</li>
+<li>access to special abilities</li>
+</ul>
+<p>The scanner provides a natural rhythm for recognizing combo sequences.</p>
+<hr />
+<h1 id="19-reward-feedback">19. Reward Feedback</h1>
+<p>Successful calculations receive intelligence-themed compliments.</p>
+<p>Examples include:</p>
+<ul>
+<li>BRIGHT</li>
+<li>SHARP</li>
+<li>CLEVER</li>
+<li>SMART</li>
+<li>BRAINY</li>
+<li>PERCEPTIVE</li>
+<li>INSIGHTFUL</li>
+<li>ASTUTE</li>
+<li>BRILLIANT</li>
+<li>GENIUS</li>
+<li>MASTERMIND</li>
+</ul>
+<p>The purpose is not simply to announce a score.</p>
+<p>The game wants the player to feel:</p>
+<blockquote>
+<p>"I solved that. I am getting smarter/faster at this."</p>
+</blockquote>
+<p>This supports the intended emotional goal of accomplishment.</p>
+<hr />
+<h1 id="20-stone-combo">20. Stone Combo</h1>
+<p>The Stone Combo occurs when two valid groups of three share exactly one block.</p>
+<p>Example concept:</p>
+<p>A five-block structure can contain two overlapping valid calculations.</p>
+<p>The name comes from the idea of:</p>
+<p><strong>hitting two birds with one stone.</strong></p>
+<p>The Stone Combo represents:</p>
+<ul>
+<li>compact calculation</li>
+<li>efficiency</li>
+<li>minimal space usage</li>
+<li>intelligent planning</li>
+<li>high-level mastery</li>
+</ul>
+<p>It was discovered through experimentation rather than being part of the original core specification.</p>
+<p>It is one of the game's most important examples of emergent depth.</p>
+<p>Stone Combo score:</p>
+<p><strong>60 points</strong></p>
+<hr />
+<h1 id="21-vertical-scan">21. Vertical Scan</h1>
+<p>Vertical Scan was added after playtesting.</p>
+<p>Players naturally discovered valid vertical arrangements, and the original horizontal-only system made the gameplay feel unnecessarily restrictive.</p>
+<p>Vertical Scan allows the system to recognize valid vertical groups.</p>
+<p>It also improves gameplay fluidity by expanding the player's possible solutions.</p>
+<p>Vertical Scan is charged through combo performance.</p>
+<p>Current implementation charges it at approximately:</p>
+<p><strong>2+ matches</strong></p>
+<p>When activated, the vertical scanner moves through the board and searches columns.</p>
+<hr />
+<h1 id="22-purge-strike">22. Purge Strike</h1>
+<p>Purge Strike is a recovery and board-management ability.</p>
+<p>During playtesting, a problem was observed:</p>
+<p>Players naturally tend to force familiar calculations.</p>
+<p>For example, when the target is 10, a player may repeatedly try:</p>
+<p>5 + 4 + 1 = 10</p>
+<p>If the required values do not appear, the player can accumulate similar numbers and gradually fill the board.</p>
+<p>Purge Strike provides a controlled escape from this situation.</p>
+<p>It identifies the most frequent number on the board and removes its occurrences.</p>
+<p>The ability therefore:</p>
+<ul>
+<li>clears problematic board states</li>
+<li>provides recovery</li>
+<li>encourages the player to consider other calculations</li>
+<li>prevents one bad strategy from becoming immediately fatal</li>
+</ul>
+<p>Purge Strike is charged at approximately:</p>
+<p><strong>3+ combo</strong></p>
+<hr />
+<h1 id="23-ability-philosophy">23. Ability Philosophy</h1>
+<p>The special abilities are not disconnected secondary mechanics.</p>
+<p>They are rewards produced by the core gameplay loop.</p>
+<p>Example:</p>
+<p><strong>2x combo → Vertical Scan</strong></p>
+<p><strong>3x combo → Purge Strike</strong></p>
+<p>This means stronger play produces additional tools that can improve future play.</p>
+<p>The system therefore forms a feedback loop:</p>
+<p><strong>Good decisions → combos → abilities → more options → better decisions</strong></p>
+<hr />
+<h1 id="24-next-piece-preview">24. Next Piece Preview</h1>
+<p>The next piece preview gives the player information about what is coming.</p>
+<p>Its purpose is not merely convenience.</p>
+<p>It changes the player's decision-making by allowing anticipation.</p>
+<p>The design principle is:</p>
+<blockquote>
+<p>Anticipation with knowledge creates better decisions.</p>
+</blockquote>
+<p>The player can therefore prepare calculations instead of reacting entirely to the current piece.</p>
+<hr />
+<h1 id="25-mobile-controls">25. Mobile Controls</h1>
+<p>FiveTen was designed primarily for touch devices.</p>
+<h3 id="horizontal-swipe">Horizontal swipe</h3>
+<p>Move the piece left or right.</p>
+<h3 id="down-swipe">Down swipe</h3>
+<p>Soft drop.</p>
+<h3 id="fast-downward-flick">Fast downward flick</h3>
+<p>Hard drop.</p>
+<h3 id="double-tap">Double tap</h3>
+<p>Rotate the piece.</p>
+<p>Double tap was selected for rotation because accidental rotation would be particularly disruptive during mobile play.</p>
+<p>The touch system also uses:</p>
+<ul>
+<li>swipe thresholds</li>
+<li>diagonal dead zones</li>
+<li>delayed auto shift</li>
+<li>repeated horizontal movement</li>
+<li>fast-flick detection</li>
+</ul>
+<hr />
+<h1 id="26-keyboard-controller-controls">26. Keyboard / Controller Controls</h1>
+<p>Keyboard/controller input supports:</p>
+<ul>
+<li>Left / Right → movement</li>
+<li>Down → soft drop</li>
+<li>Up → hard drop</li>
+<li>Accept → rotate</li>
+</ul>
+<p>The game therefore retains a conventional control model outside touch devices.</p>
+<hr />
+<h1 id="27-scoring">27. Scoring</h1>
+<p>Current scoring implementation:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Action</th>
+<th style="text-align: right;">Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Soft drop</td>
+<td class="num" style="text-align: right;">+1 per scored step</td>
+</tr>
+<tr>
+<td>Hard drop</td>
+<td style="text-align: right;">Up to +20 based on distance</td>
+</tr>
+<tr>
+<td>Normal match</td>
+<td class="num" style="text-align: right;">+25</td>
+</tr>
+<tr>
+<td>Stone Combo</td>
+<td class="num" style="text-align: right;">+60</td>
+</tr>
+<tr>
+<td>Combo</td>
+<td style="text-align: right;">Base +50, increasing by 10% per combo level after the base</td>
+</tr>
+<tr>
+<td>Target completion</td>
+<td style="text-align: right;">Target × 50</td>
+</tr>
+<tr>
+<td>Final time bonus</td>
+<td style="text-align: right;">Elapsed seconds × 10</td>
+</tr>
+</tbody>
+</table></div>
+<p>The final time bonus is applied at the end of the run.</p>
+<hr />
+<h1 id="28-leaderboard">28. Leaderboard</h1>
+<p>The leaderboard transforms score from a private number into a competitive goal.</p>
+<p>Displayed information includes:</p>
+<ul>
+<li>Rank</li>
+<li>Country</li>
+<li>Name / ID</li>
+<li>Score</li>
+<li>Highest target</li>
+<li>Time</li>
+</ul>
+<p>Country selection is optional.</p>
+<p>The leaderboard is powered through PlayFab.</p>
+<hr />
+<h1 id="29-difficulty-and-progression">29. Difficulty and Progression</h1>
+<p>Difficulty is created primarily through:</p>
+<ul>
+<li>faster scanner speed</li>
+<li>higher targets</li>
+<li>increasing cognitive load</li>
+<li>board management</li>
+<li>limited space</li>
+<li>need for faster calculations</li>
+<li>need to anticipate future pieces</li>
+</ul>
+<p>The game should not simply become difficult by restricting the player constantly.</p>
+<p>A strong level-design principle discovered during the project is:</p>
+<blockquote>
+<p>Difficulty can come from freedom of sequence. The tighter the sequence, the more difficult the situation becomes.</p>
+</blockquote>
+<p>The player should experience pressure followed by moments of freedom.</p>
+<hr />
+<h1 id="30-visual-direction">30. Visual Direction</h1>
+<p>The visual style prioritizes:</p>
+<ul>
+<li>simple presentation</li>
+<li>clean UI</li>
+<li>readable numbers</li>
+<li>readable text</li>
+<li>strong information hierarchy</li>
+</ul>
+<p>Numbers are the most important visual information.</p>
+<p>The visual identity combines educational/scientific readability with a strange medical/surgical theme.</p>
+<hr />
+<h1 id="31-hidden-narrative-and-medical-metaphor">31. Hidden Narrative and Medical Metaphor</h1>
+<p>The entire game secretly represents a defibrillator scenario.</p>
+<p>The player is not explicitly told this at the beginning.</p>
+<p>The board represents a patient.</p>
+<p>The horizontal scanner functions like a medical scanning process.</p>
+<p>The Vertical Scan uses a heartbeat/ECG visual language.</p>
+<p>Purge Strike represents external defibrillator paddles/electricity.</p>
+<p>The player is effectively trying to save the board's life.</p>
+<p>The intention is for players to notice clues and form theories without fully understanding the narrative until the end.</p>
+<hr />
+<h1 id="32-victory-narrative">32. Victory Narrative</h1>
+<p>At the end of the game, after the player successfully reaches the final condition, the board thanks the player for saving its life.</p>
+<p>The board then flies away to see its family.</p>
+<p>The narrative is intentionally light and unexpected.</p>
+<p>The reveal gives meaning to the strange medical visual language that appeared throughout the game.</p>
+<hr />
+<h1 id="33-audio-direction">33. Audio Direction</h1>
+<p>Audio is used to reinforce:</p>
+<ul>
+<li>menu interactions</li>
+<li>countdown</li>
+<li>successful start</li>
+<li>game over</li>
+<li>heartbeat/Vertical Scan</li>
+<li>Purge Strike readiness</li>
+<li>Purge Strike activation</li>
+<li>menu atmosphere</li>
+</ul>
+<p>The audio system includes dedicated players for important effects so that critical feedback is not accidentally interrupted.</p>
+<hr />
+<h1 id="34-game-flow">34. Game Flow</h1>
+<h3 id="main-menu">Main Menu</h3>
+<ul>
+<li>Endless</li>
+<li>Leaderboard</li>
+<li>Options</li>
+<li>How To Play</li>
+<li>Credits</li>
+<li>Quit</li>
+</ul>
+<h3 id="game-start">Game Start</h3>
+<p>A short 3-2-1 countdown prepares the player.</p>
+<h3 id="gameplay">Gameplay</h3>
+<p>The player places pieces, creates calculations, manages the board, builds combos, and progresses through targets.</p>
+<h3 id="game-over">Game Over</h3>
+<p>The game freezes and presents:</p>
+<ul>
+<li>score</li>
+<li>target</li>
+<li>time</li>
+</ul>
+<p>The final time bonus is applied.</p>
+<h3 id="victory">Victory</h3>
+<p>The final score is calculated and submitted, followed by the hidden narrative ending.</p>
+<hr />
+<h1 id="35-tutorial-philosophy">35. Tutorial Philosophy</h1>
+<p>The tutorial should teach the game through the smallest possible set of rules:</p>
+<ol>
+<li>Falling pieces contain numbers.</li>
+<li>Build three numbers.</li>
+<li>Make them equal the target.</li>
+<li>Let the scanner clear them.</li>
+<li>Repeat five times.</li>
+<li>Continue toward 100.</li>
+</ol>
+<p>Advanced systems such as Stone Combo and special abilities can be introduced gradually through play.</p>
+<hr />
+<h1 id="36-educational-value">36. Educational Value</h1>
+<p>FiveTen is not intended to replace mathematics education.</p>
+<p>Its educational value comes from repeated, meaningful use of arithmetic inside a fun system.</p>
+<p>Potential benefits include:</p>
+<ul>
+<li>faster addition</li>
+<li>number-combination recognition</li>
+<li>intuitive number composition</li>
+<li>attention</li>
+<li>planning</li>
+<li>decision-making</li>
+</ul>
+<p>The key design rule is that the player should be playing a game first.</p>
+<hr />
+<h1 id="37-edtech-edition-concept">37. EdTech Edition Concept</h1>
+<p>A school-oriented edition can provide additional configuration and customization.</p>
+<p>Potential controls include:</p>
+<ul>
+<li>target configuration</li>
+<li>spawn speed</li>
+<li>difficulty</li>
+<li>private/classroom leaderboards</li>
+<li>removal of advertisements</li>
+<li>school-specific presentation</li>
+</ul>
+<p>Possible customization can include:</p>
+<ul>
+<li>selected music</li>
+<li>school logo</li>
+<li>school-specific background</li>
+<li>branded gameplay presentation</li>
+</ul>
+<p>The EdTech version should remain based on the same core game rather than becoming a completely separate educational product.</p>
+<hr />
+<h1 id="38-technical-direction">38. Technical Direction</h1>
+<p>FiveTen was developed in Godot using GDScript.</p>
+<p>Major technical areas include:</p>
+<ul>
+<li>falling-piece logic</li>
+<li>board/grid management</li>
+<li>scanner systems</li>
+<li>touch input</li>
+<li>UI scaling</li>
+<li>PlayFab integration</li>
+<li>leaderboard submission</li>
+<li>audio management</li>
+<li>scene transitions</li>
+<li>countdown system</li>
+<li>mobile optimization</li>
+<li>Android export</li>
+<li>monetization integration</li>
+</ul>
+<hr />
+<h1 id="39-performance-requirements">39. Performance Requirements</h1>
+<p>Because FiveTen targets mobile devices, visual effects must not compromise gameplay performance.</p>
+<p>The project intentionally avoids expensive fullscreen effects where possible.</p>
+<p>The countdown, scanner effects, heartbeat effects, and other feedback systems were designed with mobile performance in mind.</p>
+<p>UI must remain readable across different device sizes.</p>
+<hr />
+<h1 id="40-monetization">40. Monetization</h1>
+<p>The public mobile version supports advertising.</p>
+<p>A paid option can remove advertisements.</p>
+<p>The monetization layer should not interfere with the core puzzle experience.</p>
+<hr />
+<h1 id="41-mvp-scope">41. MVP Scope</h1>
+<p>The core MVP consists of:</p>
+<ul>
+<li>falling number pieces</li>
+<li>10×17 board</li>
+<li>three-number target matching</li>
+<li>target progression</li>
+<li>scanner</li>
+<li>combo system</li>
+<li>scoring</li>
+<li>game over</li>
+<li>victory</li>
+<li>mobile controls</li>
+<li>leaderboard</li>
+<li>basic audio</li>
+<li>basic presentation</li>
+</ul>
+<p>Additional systems are only justified when they improve the central gameplay loop.</p>
+<hr />
+<h1 id="42-scope-management">42. Scope Management</h1>
+<p>One of the biggest lessons from the project was that the danger was not a lack of ideas.</p>
+<p>The danger was losing the project's scope.</p>
+<p>The central design principle became:</p>
+<blockquote>
+<p>Good game design is not about having ideas. It is about having the ability to remove and add ideas without damaging the core experience.</p>
+</blockquote>
+<p>During development, ideas were evaluated by asking:</p>
+<ol>
+<li>Does this support the core?</li>
+<li>Does this add meaningful player experience?</li>
+<li>Does it fit the project's scope?</li>
+<li>Does removing it damage the game?</li>
+</ol>
+<p>This kept FiveTen focused.</p>
+<hr />
+<h1 id="43-what-fiveten-should-never-become">43. What FiveTen Should Never Become</h1>
+<p>FiveTen should never become:</p>
+<ul>
+<li>a conventional math worksheet disguised as a game</li>
+<li>an overcomplicated falling-block system</li>
+<li>a game overloaded with unrelated abilities</li>
+<li>a UI-heavy educational application</li>
+<li>a game where the narrative overwhelms the mechanics</li>
+<li>a game where effects make numbers difficult to read</li>
+</ul>
+<p>The mathematical mechanic must remain the center.</p>
+<hr />
+<h1 id="44-design-philosophy">44. Design Philosophy</h1>
+<p>FiveTen's design philosophy is based on simple rules producing deeper consequences.</p>
+<p>The game should be:</p>
+<ul>
+<li>immediately understandable</li>
+<li>difficult to fully master</li>
+<li>flexible in solution</li>
+<li>readable</li>
+<li>rewarding</li>
+<li>playful</li>
+<li>compact</li>
+</ul>
+<p>Depth should come from interactions between systems rather than from simply adding more systems.</p>
+<hr />
+<h1 id="45-portfolio-value">45. Portfolio Value</h1>
+<p>FiveTen demonstrates more than the ability to make a prototype.</p>
+<p>It demonstrates:</p>
+<ul>
+<li>shipping a complete game</li>
+<li>designing a core mechanic</li>
+<li>iterating through playtesting</li>
+<li>balancing difficulty</li>
+<li>designing mobile controls</li>
+<li>designing feedback systems</li>
+<li>designing progression</li>
+<li>managing scope</li>
+<li>implementing leaderboards</li>
+<li>considering monetization</li>
+<li>solving technical production problems</li>
+<li>observing player behavior and responding to it</li>
+</ul>
+<p>The project also demonstrates a design process rather than only a final product.</p>
+<hr />
+<h1 id="46-final-design-summary">46. Final Design Summary</h1>
+<p>FiveTen asks a simple question:</p>
+<p><strong>Can addition become a real arcade puzzle game?</strong></p>
+<p>Its answer is built through falling pieces, target-based decisions, scanning rhythm, combos, special abilities, and increasingly demanding board management.</p>
+<p>The game's strongest design quality is not the number of systems it contains.</p>
+<p>It is the way those systems reinforce the same core activity:</p>
+<p><strong>Think → place → anticipate → calculate → clear → improve.</strong></p>
+<footer class="foot"><a href="../index.html#fiveten">Back to the FiveTen case study</a><span>FiveTen · Game design document</span></footer>
+</main>
+</div>
+</body>
+</html>
