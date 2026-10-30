@@ -119,8 +119,6 @@ img{display:block; max-width:100%; height:auto}
 a.win{display:block; color:inherit; text-decoration:none}
 
 /* FiveTen: its pixel logo on the home card, phone screenshots on its page */
-.logo-panel{aspect-ratio:5/3; max-width:100%; display:grid; place-items:center; background:#000}
-.logo-panel img{width:min(40%,200px); height:auto; image-rendering:pixelated}
 .case>*,.block>*,.decision>*{min-width:0}
 .phones{display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,210px)); gap:14px; margin:0; padding:0; list-style:none; min-width:0}
 .phones.six{grid-template-columns:repeat(auto-fill,minmax(112px,1fr))}
@@ -289,13 +287,13 @@ kbd{font:500 .68rem/1 var(--mono); display:inline-block; padding:5px 7px; margin
     <article class="entry" style="--hue:var(--ft)">
       <a class="win" href="#fiveten" aria-label="FiveTen case study">
         <div class="win-bar"><span>fiveten / Google Play</span><span>Android</span></div>
-        <div class="logo-panel"><img src="img/ft/logo.png" width="179" height="179" alt="The FiveTen logo: a blue 5 and a red 10 split by a white line, in pixel type."></div>
+        <img src="img/ft/feature.jpg" width="1024" height="500" alt="FiveTen feature graphic: the 5|10 logo beside the words FiveTen, Calculate. Clear. Conquer., over a wall of glowing number blocks.">
       </a>
       <div class="entry-text">
         <p class="tag">Falling-block puzzle · EdTech · Android</p>
         <h3><a href="#fiveten">FiveTen</a></h3>
         <p>A falling-block puzzle built on addition. Place number blocks, hit the target sum, and clear the lines before the board fills.</p>
-        <ul class="facts"><li>Godot 4</li><li>Global leaderboard</li><li>2 abilities</li></ul>
+        <ul class="facts"><li>Unity 6</li><li>3D</li><li>Global leaderboard</li><li>2 abilities</li></ul>
         <div class="btns">
           <a class="btn" href="#fiveten">Read the case study</a>
           <a class="btn ghost" href="https://play.google.com/store/apps/details?id=com.fivetenstudio.fiveten" target="_blank" rel="noopener">Google Play ↗</a>
@@ -1031,9 +1029,9 @@ kbd{font:500 .68rem/1 var(--mono); display:inline-block; padding:5px 7px; margin
     <p class="pitch">An arcade puzzle game built on addition. Falling pieces carry numbers. Line up three blocks that add up to the target, and let the scanner clear them before the board fills.</p>
     <dl class="spec">
       <div><dt>Role</dt><dd>Game design, programming, UI, systems and release. Everything except the music and some sound effects.</dd></div>
-      <div><dt>Development</dt><dd>About five months, from the start of development to release</dd></div>
+      <div><dt>Development</dt><dd>About five months to the first release in Godot, then a full rebuild in Unity, in 3D, in October 2026</dd></div>
       <div><dt>Platform</dt><dd>Android, touch. Keyboard and controller also supported.</dd></div>
-      <div><dt>Engine</dt><dd>Godot 4, GDScript, PlayFab leaderboard</dd></div>
+      <div><dt>Engine</dt><dd>Unity 6 (URP) and C#, rebuilt from the original Godot 4 version. PlayFab leaderboard, Google Play Games sign-in.</dd></div>
     </dl>
     <div class="btns">
       <a class="btn" href="https://play.google.com/store/apps/details?id=com.fivetenstudio.fiveten" target="_blank" rel="noopener">Get it on Google Play ↗</a>
@@ -1042,9 +1040,9 @@ kbd{font:500 .68rem/1 var(--mono); display:inline-block; padding:5px 7px; margin
   </header>
 
   <div class="phones">
-    <figure class="phone"><img src="img/ft/menu.jpg" width="540" height="1194" alt="FiveTen main menu: the 5|10 logo above the buttons Road to 100, Leaderboard, Options, How to play, Credits and Quit, on a background grid of coloured numbers."><figcaption>The main menu, over a wall of numbers.</figcaption></figure>
-    <figure class="phone"><img src="img/ft/play-target-10.jpg" width="540" height="1194" alt="A game at target 10, 3 of 5: a falling 2 and 3 pair above rows of small numbers, with the red scanner line crossing the board."><figcaption>Target 10, third hit of five. The red line is the scanner.</figcaption></figure>
-    <figure class="phone"><img src="img/ft/play-vertical-scan.jpg" width="540" height="1194" alt="A game at target 20 with the green vertical scanner crossing the board and three blocks, 8, 5 and 7, outlined in green as a vertical match, under the word SINGLE!"><figcaption>Target 20: the green Vertical Scan sweeps the columns.</figcaption></figure>
+    <figure class="phone"><img src="img/ft/u-menu.jpg" width="540" height="1194" alt="FiveTen main menu in the Unity version: the 5|10 logo above the buttons Road to 100, Leaderboard, Options, How to play, Credits and Quit, in front of a wall of glowing 3D number blocks."><figcaption>The main menu, in front of a 3D wall of glowing number blocks.</figcaption></figure>
+    <figure class="phone"><img src="img/ft/u-play.jpg" width="540" height="1194" alt="A game at target 15, 0 of 5: glass number blocks on a neon grid, a falling 4 and 3 pair, and the red scanner line crossing the board."><figcaption>Target 15. The red line is the scanner.</figcaption></figure>
+    <figure class="phone"><img src="img/ft/u-vertical-scan.jpg" width="540" height="1194" alt="A game at target 15 with the green vertical scanner sweeping a column while the red horizontal scanner crosses the top of the board."><figcaption>The green Vertical Scan crosses the red scanner.</figcaption></figure>
   </div>
 
   <section class="block">
@@ -1073,7 +1071,7 @@ kbd{font:500 .68rem/1 var(--mono); display:inline-block; padding:5px 7px; margin
       <figcaption>A normal match on top. Below, two matches share one block, which is the Stone Combo.</figcaption>
     </figure>
     <p>The targets climb from 10 to 100, five matches at each step.</p>
-    <p>The game teaches all of this in six short pages, each with a live demonstration on a small board.</p>
+    <p>The game teaches all of this in six short pages, each with a live demonstration on a small board. These are from the original 2D version.</p>
     <div class="phones six">
       <figure class="phone"><img src="img/ft/tut-1-goal.jpg" width="540" height="1194" alt="Tutorial page 1, Your goal: clear blocks that sum to the target, five times to advance, each new target five higher."><figcaption>1 · The goal</figcaption></figure>
       <figure class="phone"><img src="img/ft/tut-2-align.jpg" width="540" height="1194" alt="Tutorial page 2, Align 3 blocks: 3, 3 and 4 in a row make 10 and are cleared by the scanner."><figcaption>2 · Align 3 blocks</figcaption></figure>
@@ -1131,7 +1129,7 @@ kbd{font:500 .68rem/1 var(--mono); display:inline-block; padding:5px 7px; margin
       <p><b>Purge Strike</b>, charged by a three-match combo. In playtesting, players kept forcing one familiar formula. At target 10 they would wait for 5 + 4 + 1, the generator wouldn't deal those exact numbers, and the board filled with leftovers. Purge Strike removes the most common number on the board. That gets the player out of trouble and pushes them to look for other sums, so one bad habit isn't instantly fatal.</p>
       <div class="phones">
         <figure class="phone"><img src="img/ft/tut-4-purge-ready.jpg" width="540" height="1194" alt="Tutorial board crowded with the number 5, with the bar Purge Strike ready below it."><figcaption>The forced-formula problem: a board full of fives, and Purge Strike ready.</figcaption></figure>
-        <figure class="phone"><img src="img/ft/play-purge-strike.jpg" width="540" height="1194" alt="A game at target 25: a blue lightning bolt strikes from the Purge Strike button across the board while one number is cleared everywhere."><figcaption>Purge Strike in a real game at target 25.</figcaption></figure>
+        <figure class="phone"><img src="img/ft/u-purge-strike.jpg" width="540" height="1194" alt="A game at target 15: blue lightning spreads across the board and shatters every block of the most common number, while the Purge Strike button goes dark."><figcaption>Purge Strike in the Unity version: lightning hits every copy of the most common number.</figcaption></figure>
       </div>
       <p>The number generator works from the current target, so useful calculations stay possible without the answer becoming predictable, and it avoids dealing the same pair over and over.</p>
     </div>
@@ -1159,6 +1157,37 @@ kbd{font:500 .68rem/1 var(--mono); display:inline-block; padding:5px 7px; margin
           </tbody>
         </table>
       </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>From Godot to Unity, in 3D</h2>
+    <p>In October 2026 I rebuilt FiveTen in Unity 6 and shipped it as an update to the same Google Play app. The rules, the board and the scoring are the same game. Everything around them was rebuilt: the whole game is now built in code at runtime, with the game logic ported to C# and custom shaders for the glass blocks, scanners and lights.</p>
+
+    <div class="decision">
+      <h3>Game feel, inspired by Tetris Effect</h3>
+      <p>The blocks and the board are 3D glass now, and the board leans and swings with the phone's gyroscope, with options for how strong the tilt is. Lightning, scanner beams, glow, shockwaves and sparks give every clear weight, and the space background changes colour with each new target and pulses with the music.</p>
+      <p>Sound got the same attention. Each clear in a combo plays one step higher, up to an octave, so a long combo climbs. Each new target slams into the middle of the screen as a huge "TARGET 25" before flying up into its box, and an announcer reads it out. A second voice speaks the compliment for each combo, BRIGHT through MASTERMIND, so the game literally tells you how clever that was.</p>
+    </div>
+
+    <div class="decision">
+      <h3>Effects never get in front of the numbers</h3>
+      <p>Readability is still the rule. The block numbers were redrawn in the same font as the TARGET number, because they had started to look like digital-clock digits. I removed a "water drop" lens effect that played on drops and combos. Text is bigger throughout, sized for phones.</p>
+      <p>The ability buttons now show they're ready in the language of the hidden story: a heart-monitor line circles Vertical Scan, and electric arcs chase around Purge Strike.</p>
+    </div>
+
+    <div class="decision">
+      <h3>It has to run well on every phone</h3>
+      <p>An Effects setting (Auto, High or Low) really reduces the work: Low renders the 3D scene at 70% resolution with cheaper glow, no colour fringing or lens warp, and fewer particles. Auto picks High on phones with 6 GB of RAM or more and Low below that. Players can also choose 30, 60, 90 or 120 frames per second, limited to what their screen supports.</p>
+    </div>
+
+    <div class="decision">
+      <h3>Existing players lose nothing</h3>
+      <p>On first launch, the Unity version reads the Godot version's saved data, so updating players keep their best score, name and settings. Players now sign in with Google Play Games, which links their existing guest account instead of replacing it, so their leaderboard score follows them across devices.</p>
+    </div>
+
+    <div class="phones">
+      <figure class="phone"><img src="img/ft/u-play-2.jpg" width="540" height="1194" alt="A game at target 15, 3 of 5: stacks of glass number blocks, the red scanner low on the board, the 3D next-piece preview at the bottom, and the Vertical Scan button glowing green."><figcaption>Target 15, third hit: glass blocks, the 3D next-piece preview and the ability buttons.</figcaption></figure>
     </div>
   </section>
 
